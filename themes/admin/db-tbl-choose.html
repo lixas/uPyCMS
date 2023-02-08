@@ -1,0 +1,67 @@
+<!-- database table choose begin -->
+<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">Action</label>
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <label class="radio mr-3">
+          <input type="radio" name="act" value="/admin/database/schema/{}" {{"checked" if action=="schema" else ""}} /> Schema
+        </label>
+        <label class="radio ml-3">
+          <input type="radio" name="act" value="/admin/database/query/{}" {{"checked" if action=="query" else ""}} /> Query
+        </label>
+        <label class="radio ml-3">
+          <input type="radio" name="act" value="/admin/new/row?t={}" {{"checked" if action=="insert" else ""}} /> Insert
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">Table</label>
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <div class="select">
+          <select name="tbl">
+            {{"\n".join(["<option>{}</option>".format(t) for t in tbl])}}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="field is-horizontal">
+  <div class="field-label">
+    <!-- Left empty for spacing -->
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <div class="field buttons is-pulled-right">
+          <!-- here could be button -->
+        </div>
+        <div class="field buttons is-pulled-left ">
+          <button id="sub_btn" type="button" class="control button is-link" onclick="combineUrl();">Submit</button>
+          <a href="/admin/database" class="control button is-danger is-light">Close</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const combineUrl = function(){
+    let radioButton = document.querySelector('input[name="act"]:checked');
+    let selectElement = document.querySelector('select[name="tbl"]');
+
+    let combinedValue = radioButton.value.replace("{}", selectElement.value);
+    window.location.href = combinedValue
+  }
+</script>
+<!-- database table choose end -->

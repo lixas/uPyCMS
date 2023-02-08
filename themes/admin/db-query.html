@@ -1,0 +1,76 @@
+<!-- database query begin -->
+<style>
+  select#history {
+    height: auto ;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/admin/database"><i class="icon fa-solid fa-database"></i></a></li>
+    <li><a href="/admin/database/query/{{table}}">{{table}}</a></li>
+  </ul>
+</nav>
+<!-- Search -->
+<div class="columns m-1">
+  <div class="column">
+    <div class="columns">
+      <div class="column is-one-quarter">
+        <div class="subtitle">Columns &amp; order</div>
+        <code>TODO: indeterminate checkbox</code>
+        <!-- https://css-tricks.com/indeterminate-checkboxes/
+        https://jsfiddle.net/b81nsu7p/
+        https://codepen.io/jakob-e/pen/GRKEzzy -->
+        <label class="checkbox"><input type="checkbox"> [All columns]</label>
+        <ul id="columns_list">
+          {{"\n".join(["<li data-id=\"{0}\"><label class=\"checkbox\" style=\"cursor: n-resize;\"><input type=\"checkbox\" {1}> {0}</label></li>".format(k["n"], "checked" if k["v"] else "") for k in columns])}}
+        </ul>
+      </div>
+      <div class="column">
+        <div class="subtitle">Query</div>
+        <form action="/admin/database/query/{{table}}" method="POST" enctype="application/x-www-form-urlencoded" onsubmit="prependToHistoryAndSave();">
+          <input type="hidden" name="sorted" id="columnsOrder">
+          {{"Error: <code>{}</code>".format(error_msg) if error_msg else ""}}
+          <div class="field has-addons">
+            <div class="control is-expanded">
+                <input class="input is-medium" type="text" name="query" id="query" placeholder='{ "name": "bob", "password": "thispassword" } or Empty' value='{{last_query}}'>
+            </div>
+            <p class="control">
+                <a class="button is-medium is-danger is-light" id="clearQuery"><i class="fa-solid fa-eraser"></i></a>
+            </p>
+          </div>
+          <div class="field buttons is-pulled-right">
+            <div class="dropdown">
+              <div class="dropdown-trigger">
+                <div class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+                  <span>Quick jump to table</span>
+                  <span class="icon is-small">
+                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                <div class="dropdown-content">
+                  {{"\n".join(["<a href=\"/admin/database/query/{0}\" class=\"dropdown-item {1}\">{0}</a>".format(t[0], "is-active" if t[1] else "") for t in table_jump])}}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="field buttons is-pulled-left ">
+            <button type="submit" name="do" value="1" class="control button is-primary">Run query</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="column is-one-fifth">
+    <div class="subtitle">History</div>
+    <div class="select is-multiple">
+      <select size="5" id="history"></select>
+    </div>
+    <div>
+      <button class="control button is-warning is-light" onclick="clearHistory();">Clear</button>
+    </div>
+  </div>
+</div>
+<!-- Query end -->

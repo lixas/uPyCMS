@@ -1,0 +1,22 @@
+<!-- Results -->
+<form action="/admin/database/del-rows/{{table}}" method="POST" enctype="multipart/form-data" onsubmit="getColsAndQuery();">
+  <div class="table-container">
+    <table class="table is-hoverable">
+      <thead>
+        <tr>
+          <th>_rowid</th>{{"".join(["<th>{0}</th>".format(k["n"]) if k["v"] else "" for k in columns])}}
+        </tr>
+      </thead>
+      <tbody>
+        {{"\n".join(['<tr>{}</tr>'.format(''.join('<td>{}</td>'.format(item if no!=0 else "<input type=\"checkbox\" name=\"_rid[]\" value=\"{0}\" > {0}".format(item)) for no, item in enumerate(sublist))) for sublist in dlist])}}
+      </tbody>
+    </table>
+  </div>
+  <div class="field buttons is-pulled-left ">
+    <input type="hidden" name="columnsOrderDelete" id="columnsOrderDelete">
+    <input type="hidden" name="returnQueryDelete" id="returnQueryDelete">
+    <button type="submit" href="" class="control button is-danger is-light" {{"" if len(dlist)>0  else "disabled" }} >Delete</a>
+  </div>
+</form>
+<script src="/static/adm_db_query.js"></script>
+<!-- result end -->

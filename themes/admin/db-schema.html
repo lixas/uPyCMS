@@ -1,0 +1,34 @@
+<!-- database schema end -->
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/admin/database"><i class="icon fa-solid fa-database"></i></a></li>
+    <li><a href="/admin/database/query/{{table}}">{{table}}</a></li>
+    <li><a href="/admin/database/schema/{{table}}">Schema</a></li>
+  </ul>
+</nav>
+<ul>
+  <li>Rows per page: <strong>{{tdef["per-page"]}}</strong></li>
+  <li>Max Rows: <strong>{{tdef["max"]}}</strong></li>
+</ul>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Type</th>
+      <th>Max Length</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{"\n".join(["<tr><th>{0}</th><td>{1}</td><td>{2}</td></tr>".format(i["Name"], i["Type"], i["Length"]) for i in clist])}}
+  </tbody>
+</table>
+
+<div class="field buttons is-pulled-right">
+  <a href="/admin/database/drop/{{table}}" class="control button is-danger">Drop table</a>
+</div>
+<div class="field buttons is-pulled-left ">
+  <a href="/admin/new/row?t={{table}}" class="control button is-primary">Insert</a>
+  <a href="/admin/database/query/{{table}}" class="control button is-link">Query</a>
+  <!-- <a href="/admin/database/sql" class="control button is-warning is-link">SQL</a> -->
+</div>
+<!-- database schema end -->

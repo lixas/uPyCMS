@@ -1,0 +1,44 @@
+import uos as os
+
+def kill(current_path):
+
+    entries = sorted(list(os.ilistdir(current_path)), key=lambda f: f[1])
+    
+    dirs = []
+    files = []
+    for f in entries:
+        if f[1] == 0x4000:
+            dirs.append(f)
+        else:
+            files.append(f)
+
+    for f in files:
+        targetfile = merge(current_path, f[0])
+        if not (f[0].find('kill_ffs.py') >= 0 or f[0].find('boot.py') >= 0):
+            print("Deleting " + targetfile)
+            os.remove(targetfile)
+
+    for d in dirs:
+        targetdir = merge(current_path, d[0])
+        kill(targetdir)
+        if not current_path == "" and not current_path == "/":
+            try:
+                print("Removing " + targetdir)
+                os.rmdir(targetdir)
+            except:
+                pass
+
+def merge(*args):
+    slash = '/'
+    r = ''
+    for part in args:
+        r += (slash + part)
+    r = r.replace(3 * slash, slash)
+    r = r.replace(2 * slash, slash)
+    if r != slash and r[-1] == slash:
+        r = r[:-1]
+    return r
+
+inputnow = input("*** WARNING ***\r\nEnter 'y' to continue:")
+if inputnow == 'y' or inputnow == 'Y':
+    kill('/')

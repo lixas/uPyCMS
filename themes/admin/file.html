@@ -1,0 +1,27 @@
+<!-- file browser begin -->
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/admin/files"><i class="icon fa-regular fa-folder-open"></i></a></li>
+    {{"\n".join(["<li><a href=\"/admin/files/browse/{0}\">{1}</a></li>".format(i["P"], i["T"]) for i in breadcrumb])}}
+  </ul>
+</nav>
+{{"<code>{0}</code>".format(msg) if msg else ""}}
+<div class="table-container">
+<table class="table is-hoverable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{"<tr><th><a href=\"/admin/files/browse/{}\">..</a></th><td colspan=\"3\">&nbsp;</td></tr>".format(parent) if parent else ""}}
+    {{"\n".join(["<tr><th><a href=\"/admin/files/browse/{1}\">{0}</a></th><td>{2}</td><td>{3}</td><td></td></tr>".format(i[0], i[1], i[2], i[3]) for i in dlist])}}
+    {{"\n".join(["<tr><th><a href=\"/admin/files/view/{1}\">{0}</a></th><td>{2}</td><td>{3}</td><td><a href=\"/admin/files/del/{1}?return=files\"><i class=\"fa-solid fa-trash-can\"></i></a></td></tr>".format(i[0], i[1], i[2], i[3]) for i in flist])}}
+  </tbody>
+</table>
+</div>
+TODO: Form: create new file and upload new file
+<!-- file browser end -->

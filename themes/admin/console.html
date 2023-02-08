@@ -1,0 +1,89 @@
+<!-- console page begin -->
+<style>
+p.is-size-9 {
+    white-space: pre-wrap;
+  }
+
+.consoleContainer{
+  height: 15em; 
+  display: flex;
+  overflow-y: auto;
+ }
+</style>
+<div class="container">
+  <div class="consoleContainer">
+    <div class="bottom-sticker console is-family-monospace is-fullwidth mt-auto">
+      <p class="is-size-9 has-text-grey-light">Welcome to the uPyCMS command prompt!</p>
+      <p class="is-size-9 has-text-grey-light">Type a command and press submit to see the result.</p>
+    </div>
+  </div>
+  <div class="field has-addons">
+    <div class="control is-expanded">
+    <textarea class="input is-family-monospace" type="text" 
+      placeholder="CTRL + ENTER to send command. UP-key to retrieve last sent command"
+      onfocus="resizeToContent(this)"
+      onkeyup="resizeToContent(this)"
+      ></textarea>
+    </div>
+    <div class="control" style="align-self: flex-end;">
+      <div class="button is-info"><i class="fa-regular fa-paper-plane"></i></div>
+      <button class="button is-warning is-rounded"><i class="fa-solid fa-broom"></i></button>
+    </div>
+  </div>
+</div>
+<script>
+  // Get the command input field and the console div
+  var consoleHolder = document.querySelector('div.consoleContainer');
+  var consoleDiv = document.querySelector('div.console');
+  var inputField = document.querySelector('textarea.is-family-monospace');
+  var latestMessage = "";
+
+const sendCommand = function() {
+  // Get the command text from the input field
+  var command = inputField.value;
+  latestMessage = command;
+
+  // Make an AJAX request to the server with the command text
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      inputField.value = "";
+      // If the request is successful, process and append each line of the response to the console div
+      var responseLines = xhr.responseText.split('\n');
+      for (var i = 0; i < responseLines.length; i++) {
+        // Process the line here, e.g. by adding a timestamp or coloring it based on the content
+        var processedLine = responseLines[i];
+        processedLine = processedLine.replace("<", "&lt;").replace(">", "&gt;")
+
+        // Append the processed line to the console div
+        consoleDiv.innerHTML += '<p class="is-size-9">' + processedLine + '</p>';
+      }
+      consoleHolder.scrollTop = consoleHolder.scrollHeight;
+    }
+  };
+  xhr.open('POST', '/admin/console/ajax', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.send('code=' + encodeURIComponent(command));
+}
+
+// Add an event listener to the submit button to send the command when clicked
+document.querySelector('div.button').addEventListener('click', sendCommand);
+
+// Add an event listener for the keydown event
+inputField.addEventListener('keydown', function(event) {
+  
+  // CTRL+ENTER keys
+  if (event.ctrlKey && event.keyCode === 13 && inputField.value.length > 0) {
+    sendCommand();
+  }
+  // UP key
+  else if (event.keyCode === 38 && inputField.value.length == 0) {
+    inputField.value = latestMessage;
+  }
+});
+
+const resizeToContent = function(self){
+    self.style.height = "";self.style.height = self.scrollHeight + 3 + "px"
+}
+</script>
+<!-- console page end -->

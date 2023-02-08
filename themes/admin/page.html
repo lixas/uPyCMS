@@ -1,0 +1,25 @@
+<!-- pages list begin -->
+<div class="table-container">
+<table class="table is-hoverable">
+  <thead>
+    <tr>
+      <th>Content Path</th>
+      <th>Size</th>
+      <th>View</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th>Path</th>
+      <th>Size</th>
+      <th>View</th>
+      <th>Delete</th>
+    </tr>
+  </tfoot>
+  <tbody>
+    {{"\n".join(["""<tr><th><a href=\"/admin/page/edit/{0}\">{0}</a></th><td>{1}</td><td><a href=\"/page/{0}\"><i class="fa-solid fa-eye"></i></a></td><td><a href=\"/admin/files/del/pages:{0}.md?return=pages\"><i class="fa-solid fa-trash-can"></i></a></td></tr>""".format(i[0], i[1]) for i in plist])}}
+  </tbody>
+</table>
+</div>
+<!-- pages list end -->

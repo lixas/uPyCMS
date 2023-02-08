@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <BASE href="admin/" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>uPyCMS admin panel login</title>
+    <link rel="stylesheet" href="/static/bulma.min.css">
+  </head>
+  <body>
+    <section class="hero is-dark is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <div class="columns is-centered">
+            <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+              <form action="/admin/login" method="post" class="box">
+                <div class="field">
+                  <label for="" class="label">Email</label>
+                  <div class="control has-icons-left">
+                    <input name="username" type="text" placeholder="BobSmith@company.com" class="input" required>
+                    <span class="icon is-small is-left">
+                      <i class="fa fa-user"></i>
+                    </span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="" class="label">Password</label>
+                  <div class="control has-icons-left">
+                    <input name="password" type="password" placeholder="***********" class="input" required>
+                    <span class="icon is-small is-left">
+                      <i class="fa fa-lock"></i>
+                    </span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="" class="checkbox">
+                    <input type="checkbox"> Remember me</label>
+                </div>
+                <div class="field">
+                  <button class="button is-success">Login</button>
+                </div>
+                <input type="hidden" name="follow" value="{{follow}}">
+              </form>
+              <a href="/admin/make{{"?follow={}".format(follow) if follow else ""}}"><b>Login without password</b></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

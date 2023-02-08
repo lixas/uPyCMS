@@ -1,0 +1,73 @@
+<!-- form begin -->
+<form action="/admin/blog/save" method="post" enctype="multipart/form-data">
+  <input type="hidden" name="blog_id" value="{{blog_data[0]}}" />
+  <div class="field">
+    <label class="label">Title</label>
+    <div class="control">
+      <input name="title" class="input" type="text" placeholder="Title for your blog post" maxlength="50" value="{{blog_data[1]}}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label">Blog post</label>
+    <div class="control">
+      <textarea name="blog" id="md-text" class="textarea" placeholder="Write all your thought on your mind" onfocus='this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"'>{{blog_data[2]}}</textarea>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label">Average reading time (mm:ss) at 150 word per minute</label>
+    <div class="control">
+      <input id="readtime" name="readtime" class="input" type="text" value="0:00">
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="field buttons is-pulled-right">
+    {{"<a href=\"/admin/blog/delete/{}\" class=\"control button is-danger\">Delete</a>".format(blog_data[0]) if blog_data[0] > 0 else "" }}
+  </div>
+  <div class="field buttons is-pulled-left ">
+    <a class="control button is-success" onclick="prepareModal()" >Preview</a>
+    <button type="submit" class="control button is-link">Submit</button>
+    <a href="/admin/blog" class="control button is-danger is-light">Close</a>
+  </div>
+</form>
+<!-- form end -->
+<!-- modal begin -->
+<div id="modal-window" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card" style="width: calc(100vw - 100px);">
+    <header class="modal-card-head">
+      <p class="modal-card-title">MD text preview</p>
+      <button class="delete" aria-label="close" onclick="modalToggle()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="modal-content-preview" class="content"></div>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button" onclick="modalToggle()" >Close</button>
+    </footer>
+  </div>
+</div>
+<!-- modal end -->
+<script type="text/javascript">
+  function modalToggle(){
+    document.getElementById('modal-window').classList.toggle('is-active')
+  }
+  function prepareModal(){
+    document.getElementById('modal-content-preview').innerHTML = (new showdown.Converter({extensions: ['table']})).makeHtml(document.getElementById('md-text').value);
+    modalToggle()
+  }
+
+  document.getElementById('md-text').onkeyup= function(){
+    const text = document.getElementById('md-text').value;
+    const wpm = 150;
+    const words = text.trim().split(/\s+/).length;
+    const decimalMinutes = words / wpm;
+    const minutes = Math.floor(decimalMinutes);
+    const seconds = Math.round((decimalMinutes - minutes) * 60);
+    document.getElementById('readtime').value = seconds < 10 ? `${minutes}:0${seconds}` : `${minutes}:${seconds}`
+  };
+  document.getElementById('md-text').onkeyup.call()
+</script>

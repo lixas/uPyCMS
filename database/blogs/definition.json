@@ -1,0 +1,1 @@
+{"settings": {"rows_per_page": 20, "max_rows": 10000}, "columns": {"title": {"data_type": "str", "max_length": 50}, "authorid": {"data_type": "int"}, "published": {"data_type": "str", "max_length": 16}, "path": {"data_type": "str", "max_length": 25}, "readtime": {"data_type": "str", "max_length": 5}, "size": {"data_type": "int"}}}

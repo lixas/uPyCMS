@@ -1,0 +1,34 @@
+<!-- database new table end -->
+<form action="/admin/database/new_tbl/save" method="post" enctype="multipart/form-data">
+  <div class="field">
+    <label class="label">Table name</label>
+    <div class="control">
+      <input name="tbl_name" class="input" type="text" placeholder="Name your table" maxlength="10" value="{{new_tbl_name}}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label">Table definition</label>
+    <div class="control">
+      <textarea name="tbl_def" class="textarea" 
+        placeholder='table definition is simple: column name and type (str, int, float, bool)
+name str
+age int
+height float
+ismember bool'
+        onkeyup="resizeTextArea(this)"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="field buttons is-pulled-left ">
+    <button type="submit" class="control button is-link">Submit</button>
+    <a href="/admin/database" class="control button is-danger is-light">Calcel</a>
+  </div>
+</form>
+<!-- database new table end -->
+<script>
+  const resizeTextArea = function(self){
+    self.style.height = "";self.style.height = self.scrollHeight + 3 + "px"
+  }
+</script>

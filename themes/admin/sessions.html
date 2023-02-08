@@ -1,0 +1,27 @@
+<!-- sessions list begin -->
+<div class="table-container">
+<table class="table">
+  <thead>
+    <tr>
+      <th>Session ID</th>
+      <th>Valid to</th>
+      <th>IP address</th>
+      <th>Data</th>
+      <th>Terminate session</th>
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th>ID</th>
+      <th>Valid to</th>
+      <th>IP</th>
+      <th>Data</th>
+      <th>Terminate</th>
+    </tr>
+  </tfoot>
+  <tbody>
+    {{"\n".join(["""<tr{4}><th>{0}</th><td>{1}</td><td>{2}</td><td>{3}</td><td><i class="fa-solid fa-user-minus"></i></td></tr>""".format(i[0], i[1], i[2], "<br />".join(["'{}': {}".format(key, value) for key, value in i[3].items()]), " class=\"is-selected\"" if i[4] else "") for i in slist])}}
+  </tbody>
+</table>
+</div>
+<!-- sessions list end -->

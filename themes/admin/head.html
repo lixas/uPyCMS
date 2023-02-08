@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>uPyCMS Admin Panel</title>
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css"> -->
+    <link rel="stylesheet" href="/static/bulma.min.css">
+    <link rel="stylesheet" href="/static/bulma-divider.min.css">
+    <script src="/static/bulma.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.7.6/showdown.min.js"></script> -->
+    <script src="/static/showdown.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/showdown-table@1.0.1/dist/showdown-table.min.js"></script> -->
+    <script src="/static/showdown-table.min.js"></script>
+    <!-- <script defer src="https://use.fontawesome.com/releases/v6.2.1/js/all.js"></script> -->
+    <script src="/static/FA-6.2.1.min.js"></script>
+    <style>
+      .navbar-item img {
+        max-height: 4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="columns is-gapless">
+      <div class="column">
+        <nav class="navbar" role="navigation" aria-label="main navigation">
+          <div class="navbar-brand">
+            <a class="navbar-item" href="/admin"><img src="/static/logo.webp"></a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+              <span aria-hidden="true"></span>
+              <span aria-hidden="true"></span>
+              <span aria-hidden="true"></span>
+            </a>
+          </div>
+          <div id="navbarBasicExample" class="navbar-menu">
+            <div class="navbar-start">
+              <a href="/" class="navbar-item"><i class="icon mr-2 fa-solid fa-house-laptop"></i>Front page</a>
+
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link"><i class="icon mr-2 fa-regular fa-map"></i>Content</a>
+                <div class="navbar-dropdown">
+                  <a href="/admin/blog" class="navbar-item"><i class="icon mr-3 fa-solid fa-blog"></i>Blogs</a>
+                  <a href="/admin/page" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-word"></i></span>Static Pages</a>
+                  <a href="/admin/code" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-code"></i></span>Dynamic Codes</a>
+                </div>
+              </div>
+
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link"><i class="icon mr-2 fa-solid fa-magnifying-glass"></i>Browse</a>
+                <div class="navbar-dropdown">
+                  <a href="/admin/database" class="navbar-item"><i class="icon mr-3 fa-solid fa-database"></i>Database</a>
+                  <a href="/admin/files" class="navbar-item"><i class="icon mr-3 fa-regular fa-folder-open"></i>File system</a>
+                  <hr class="navbar-divider">
+                  <a href="/admin/sessions" class="navbar-item"><i class="icon mr-3 fa-solid fa-users-viewfinder"></i>Sessions</a>
+                </div>
+              </div>
+
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link"><i class="icon mr-2 fa-solid fa-microchip"></i>Server</a>
+                <div class="navbar-dropdown">
+                  <a class="navbar-item"><i class="icon mr-3 fa-solid fa-wifi"></i>WiFi</a>
+                  <a href="/admin/servertime" class="navbar-item"><i class="icon mr-3 fa-regular fa-clock"></i>Server time</a>
+                  <a href="/admin/console" class="navbar-item"><i class="icon mr-3 fa-solid fa-terminal"></i>Console</a>
+                </div>
+              </div>
+            </div>
+            <div class="navbar-end">
+              <div class="navbar-item">
+                <div class="buttons">
+                  <a href="/admin/logout" class="button is-danger">
+                    <strong>Log out</strong>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+        <div class="columns">
+          {{ "<div class=\"column is-one-quarter box navbar-menu\">" if leftmenu else "" }}
+            {{ "<div class=\"title\">{0}</div>".format(leftmenu[0]) if leftmenu[0] else "" }}
+            {{"\n".join(["""<a href=\"{0}\" class=\"navbar-item\">{2}{1}</a>""".format(itm[1], itm[0], "<i class=\"icon mr-1 {0}\"></i>".format(itm[2]) if len(itm)==3 else "" ) for itm in leftmenu[1]])}}
+          {{ "</div>" if leftmenu else "" }}
+          <div class="column mr-2">

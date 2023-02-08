@@ -1,0 +1,53 @@
+<!-- form begin -->
+<form action="/admin/page/save" method="post" enctype="multipart/form-data">
+  <div class="field">
+    <label class="label">File name</label>
+    <div class="control">
+      <input name="filename" class="input" type="text" placeholder="Name the file of your page" maxlength="50" value="{{page_data[0]}}">
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">Static page</label>
+    <div class="control">
+      <textarea name="pagetext" id="md-text" class="textarea" placeholder="Write all your thought on your mind" onfocus='this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"'>{{page_data[1]}}</textarea>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="field buttons is-pulled-right">
+    {{"<a href=\"/admin/files/del/pages:{0}.md?return=pages\" class=\"control button is-danger\">Delete</a>".format(page_data[0]) if len(page_data[0]) > 0 else "" }}
+  </div>
+  <div class="field buttons is-pulled-left ">
+    <a class="control button is-success" onclick="prepareModal()" >Preview</a>
+    <button type="submit" class="control button is-link">Submit</button>
+    <a href="/admin/page" class="control button is-danger is-light">Close</a>
+  </div>
+</form>
+<!-- form end -->
+<!-- modal begin -->
+<div id="modal-window" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card" style="width: calc(100vw - 100px);">
+    <header class="modal-card-head">
+      <p class="modal-card-title">MD text preview</p>
+      <button class="delete" aria-label="close" onclick="modalToggle()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="modal-content-preview" class="content"></div>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button" onclick="modalToggle()" >Close</button>
+    </footer>
+  </div>
+</div>
+<!-- modal end -->
+<script type="text/javascript">
+  function modalToggle(){
+    document.getElementById('modal-window').classList.toggle('is-active')
+  }
+  function prepareModal(){
+    document.getElementById('modal-content-preview').innerHTML = (new showdown.Converter({extensions: ['table']})).makeHtml(document.getElementById('md-text').value);
+    modalToggle()
+  }
+</script>

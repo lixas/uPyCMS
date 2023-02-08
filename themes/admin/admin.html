@@ -1,0 +1,87 @@
+<style>
+.gauge {
+    position: relative;
+    border-radius: 50%/100% 100% 0 0;
+    background-color: var(--color, #a22);
+    overflow: hidden;
+}
+.gauge:before{
+    content: "";
+    display: block;
+    padding-top: 50%;   /* ratio of 2:1*/
+}
+.gauge .chart {
+  overflow: hidden;
+}
+.gauge .mask {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 0;
+  top: 40%;
+  background-color: #fff;
+  border-radius: 50%/100% 100% 0 0;
+}
+
+.gauge .percentage {
+    position:  absolute;
+    top: -1px;
+    left: -1px;
+    bottom: 0;
+    right: -1px;
+    background-color: var(--background, #aaa);
+    transform:rotate(var(--rotation)); 
+    transform-origin: bottom center; 
+    transition-duration: 600;
+}
+.gauge:hover {
+  --rotation: 100deg;
+}
+.gauge .value {
+  position:absolute; 
+  bottom:20%; 
+  left:0;   
+  width:100%; 
+  text-align: center;
+}
+.gauge .name {
+  position:absolute; bottom:0%; left:0;   
+  width:100%; 
+  text-align: center;
+}
+
+.gauge .min {
+  position:absolute; 
+  bottom:0; left:5%;   
+}
+.gauge .max {
+  position:absolute; 
+  bottom:0; right:5%;   
+ }
+</style>
+<!-- admin page begin-->
+<div class="title ml-1 mr-1 m-2">Server time: {{servertime}}</div>
+<div class="title ml-1 mr-1 m-2">Storage</div>
+<div class="subtitle ml-1 mr-1 m-2" style="display: flex;">
+  <div class="gauge" style="width: 200px; --rotation:{{180/fs['total']*fs['used']}}deg; --color: {{ fs['color'] }}; --background:#e9ecef;">
+      <div class="percentage"></div>
+      <div class="mask"></div>
+      <span class="value">{{int(100/fs['total']*fs['used'])}}%</span>
+      <span class="name">Internal</span>
+  </div>
+  <div class="gauge" style="width: 200px; margin-left: 10px; --rotation:{{180/sd['total']*sd['used']}}deg; --color:#--color: {{ fs['color'] }}; --background:#e9ecef;">
+    <div class="percentage"></div>
+    <div class="mask"></div>
+    <span class="value">{{int(100/sd['total']*sd['used'])}}%</span>
+    <span class="name">SDCard</span>
+  </div>
+</div>
+<div class="title ml-1 mr-1 m-2">Statistics</div>
+<table class="table is-hoverable">
+  <tr class="is-hoverable"><th>Bytes sent</th><td>{{bytes_sent}}</td></tr>
+  <tr class="is-hoverable"><th>Request Method</th><th>Count</th></tr>
+  {{ "\n".join(["<tr><td>{0}</td><td>{1}</td></tr>".format(k, v) for k, v in req_stats["Method"].items() ])}}
+  <tr class="is-hoverable"><th>Response status code</th><th>Count</th></tr>
+  {{ "\n".join(["<tr><td>{0}</td><td>{1}</td></tr>".format(k, v) for k, v in req_stats["Status"].items() ])}}
+</table>
+<!-- admin page end-->

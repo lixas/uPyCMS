@@ -1,0 +1,1252 @@
+import gc, uasyncio, json, os, sys, time, machine, network  # type: ignore comment;
+gc.enable()
+from io import StringIO
+import libs.PyDB as mdb  # type: ignore comment;
+from libs import session as ses
+from libs.phew import server #, connect_to_wifi, is_connected_to_wifi
+from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
+import libs.phew.logging as logging  # type: ignore comment;
+import conf as c
+gc.collect()
+
+sys.path.append("/pages/codes") # users modules
+blog_rows_index = []
+
+sta_if = network.WLAN(network.STA_IF)
+if not sta_if.isconnected():
+    sta_if.active(True)
+    available_wifi = False
+    for net in sta_if.scan():
+        net = net[0].decode("utf-8") 
+        if net in c.wifi:
+            available_wifi = net
+            break
+    if available_wifi:
+        sta_if.connect(available_wifi, c.wifi[available_wifi])
+        while not sta_if.isconnected():
+            pass
+        logging.debug("> Server IP: {}".format(sta_if.ifconfig()[0]))
+    else:
+        ssid = 'uPyCMS'
+        password = '123456789'
+
+        ap = network.WLAN(network.AP_IF)
+        ap.active(True)
+        ap.config(essid=ssid, password=password)
+
+        while ap.active() == False:
+            pass
+
+        print('Connection successful')
+        print(ap.ifconfig())
+
+
+
+
+
+
+# if not is_connected_to_wifi():
+#     _ip = connect_to_wifi(c.wifi_user, c.wifi_pass)
+#     logging.debug("> Server IP: {}".format(_ip))
+# del(connect_to_wifi, is_connected_to_wifi)
+gc.collect()
+
+# def timed_function(f, *args, **kwargs):
+#     myname = str(f)  # .split(' ')[1]
+#     def new_func(*args, **kwargs):
+#         t = time.ticks_us()
+#         result = f(*args, **kwargs)
+#         delta = time.ticks_diff(time.ticks_us(), t)
+#         print('Function {} Time = {:6.3f}ms'.format(myname, delta/1000))
+#         return result
+#     return new_func
+
+SDCard_available=False
+try:
+    os.mount(machine.SDCard(slot=2, width=1, sck=machine.Pin(14), miso=machine.Pin(2), mosi=machine.Pin(15), cs=machine.Pin(13), freq=20000000), "/sd")
+    SDCard_available=True
+except:
+    pass
+
+# decorator
+def admin_required(f):
+    def d(request, *args, **kwargs):
+        if not Admin.isAdmin(request):
+            return render_template(c.adm_login, follow=request.path)
+        # gc.collect()
+        return f(request, *args, **kwargs)
+    return d
+
+def file_exists(path):
+    try:
+        f = open(path, 'r') 
+        f.close()
+        return True
+    except OSError:  # type: ignore comment;
+        return False
+
+def dir_exists(path):
+    try:
+        return os.stat(path)[0] & 0o170000 == 0o040000
+    except OSError:  # type: ignore comment;
+        return False
+
+def get_file_size(path):
+    path_array = path.split("/")
+    name = path_array.pop()
+    location = "/".join(path_array)
+    if(dir_exists(location)):
+        for loc in os.ilistdir(location):
+            if loc[0] == name:
+                return loc[3]
+    else:
+        return False
+
+@server.route("/static/<resource>")
+def serve(_, resource):
+    resource = resource.replace("../", "")
+    staticlist = os.listdir("/themes/static/")
+    # gzipped exist? If found- send them first
+    if "{}.gz".format(resource) in staticlist:
+        return server.serve_file("themes/static/{}.gz".format(resource), {"Content-encoding": "gzip"})
+    # non-gzipped exists ?
+    elif resource in staticlist:
+        return server.serve_file("themes/static/{}".format(resource))
+    else:
+        return "HTTP-404 Resource Not found", 404
+
+@server.route("/favicon.ico")
+def favicon(request):
+    return serve(request, "favicon.ico")
+
+def error_page(code):
+    with open("/themes/basic/{}.html".format(str(code).replace("..", "")))as f:
+        return f.read()
+
+class Front():
+    @server.route("/")
+    async def index(request):
+        async def f(request):
+            # TODO: ideti patikra ir sukurti del failo ir sukurti nauja
+            with open("/pages/index.md") as f:
+                await render_template(c.frn_head)
+                await render_template("{}page.html".format(c.frn), content=f.read(), title="Index")
+                return await render_template(c.frn_foot)
+        # gc.collect()
+        return await f(request)
+
+    # render blog list
+    @server.route("/blog")
+    async def blog(request):
+        async def f(request):
+            global blog_rows_index
+            tbl = mdb.Database.open("database").open_table("blogs")
+
+            if len(blog_rows_index) < 1:
+                for rec in tbl.scan(None, True):
+                    blog_rows_index.append(rec['_row'])
+                blog_rows_index.reverse()
+            #paging logic
+            page = int(request.query.get("page", 1))
+            begin = (page-1)*c.blogs_per_page
+            end = page*c.blogs_per_page
+
+            next_enabled=True
+            if end > len(blog_rows_index):
+                next_enabled=False
+
+            await render_template(c.frn_head)
+            for blog_row in blog_rows_index[begin:end]:
+                dt = tbl.find_row(blog_row)
+                path = "/blogs/{0}/{1}.md".format(dt["d"]["path"], dt["r"])
+                if(file_exists(path)):
+                    with open(path) as f:
+                        if(int(dt["d"]["size"])) > c.blog_list_content_size:
+                            await render_template("{}blog-list-chunk.html".format(c.frn), 
+                                    data=[blog_row, dt["d"]["title"],
+                                    "{}&#8230;".format(f.read(c.blog_list_content_size)), 
+                                    dt["d"]["published"], dt["d"]["readtime"]])
+                        else:
+                            await render_template("{}blog-list-chunk.html".format(c.frn), 
+                                    data=[blog_row, dt["d"]["title"], 
+                                    f.read(),
+                                    dt["d"]["published"], dt["d"]["readtime"]])
+            
+            await render_template("{}blog-list-page.html".format(c.frn), page = page, next_enabled = next_enabled)
+            return await render_template(c.frn_foot)
+        # gc.collect()
+        return await f(request)
+
+    # render blog post into template
+    @server.route("/blog/<post>")
+    def blog_post(request, post):
+        try:
+            data = mdb.Database.open("database").open_table("blogs").find_row(int(post))
+        except Exception:   # type: ignore comment;
+            return error_page(404), 404
+        path = "/blogs/{0}/{1}.md".format(data["d"]["path"], data["r"])
+        if(file_exists(path)):
+            with open(path) as f:
+                return render_template("{}blog-f.html".format(c.frn), content=f.read(), title=data["d"]["title"], readtime=data["d"]["readtime"], published=data["d"]["published"])
+        else:
+            return error_page(404), 404
+
+    # render requested codepage
+    @server.route("/code/<codepage>", methods=["GET", "POST"])
+    def code_page(request, codepage):
+        # content handler
+        def ch(code_data, method):
+            if not code_data:
+                return "Error", "Module not found"
+            if not code_data["enabled"]:
+                return "Error", "Module is disabled"
+            if code_data["methods"].find(method) < 0:
+                return "Error", "Module is not accessible via '{}' method".format(method)
+            # all good, handle user module
+            title = code_data["title"]
+            user_mod_name = "{0}".format(code_data["exec_path"])
+            user_mod = __import__(user_mod_name)         # type: ignore comment;
+            content = str(user_mod.HTML) or "User module did not return anything in <b>HTML</b> variable"
+            del(sys.modules[user_mod_name])
+            return title, content
+
+        code_data = mdb.Database.open("database").open_table("codepages").find({"hyperlink": codepage})
+        if not code_data:
+            return error_page(404), 404
+        else:
+            title, content = ch(code_data, request.method)
+            return render_template("{}page-f.html".format(c.frn), content=content, title=title)
+
+
+    @server.route("/page/<staticpage>")
+    def static_page(request, staticpage):
+        if file_exists("/pages/{0}.md".format(staticpage)):
+            with open("/pages/{0}.md".format(staticpage)) as f:
+                return render_template("{}page-f.html".format(c.frn), content=f.read()),
+        else:
+            return error_page(404), 404
+
+    # # render blog post into template
+    # @server.route("async/blog/<post>")
+    # async def async_blog_post(request, post):
+    #     async def f(post):
+    #         try:
+    #             data = mdb.Database.open("database").open_table("blogs").find_row(int(post))
+    #         except Exception:   # type: ignore comment;
+    #             await render_template(c.frn_head), 404
+    #             await render_template("{}page.html".format(c.frn), content="Error HTTP-404", title="Not found")
+    #             return await render_template(c.frn_foot)
+    #         path = "/blogs/{0}/{1}.md".format(data["d"]["path"], data["r"])
+    #         if(file_exists(path)):
+    #             with open(path) as f:
+    #                 if get_file_size(path) < 1000:
+    #                     await render_template(c.frn_head)
+    #                     await render_template("{}blog.html".format(c.frn), content=f.read(), title=data["d"]["title"], readtime=data["d"]["readtime"], published=data["d"]["published"])
+    #                     return await render_template(c.frn_foot)
+    #                 else:
+    #                     await render_template(c.frn_head)
+    #                     await render_template("{}blog-chunk-begin.html".format(c.frn), title=data["d"]["title"], readtime=data["d"]["readtime"], published= data["d"]["published"])
+    #                     while True:
+    #                         chunk = f.read(512)
+    #                         if not chunk:
+    #                             break
+    #                         await render_template("{}string.html".format(c.frn), s=chunk)
+    #                     await render_template("{}blog-chunk-end.html".format(c.frn))
+    #                     return await render_template(c.frn_foot)
+    #         else:
+    #             await render_template(c.frn_head), 404
+    #             await render_template("{}page.html".format(c.frn), content="Blog post not found", title="Not found")
+    #             return await render_template(c.frn_foot)
+    #     gc.collect()
+    #     return await f(post)
+
+    # # render requested codepage
+    # @server.route("async/code/<codepage>", methods=["GET", "POST"])
+    # async def async_code_page(request, codepage):
+    #     async def f(codepage):
+    #         # content handler
+    #         def ch(code_data, method):
+    #             if not code_data:
+    #                 return "Error", "Module not found"
+    #             if not code_data["enabled"]:
+    #                 return "Error", "Module is disabled"
+    #             if code_data["methods"].find(method) < 0:
+    #                 return "Error", "Module is not accessible via '{}' method".format(method)
+    #             # all good, handle user module
+    #             title = code_data["title"]
+    #             user_mod_name = "{0}".format(code_data["exec_path"])
+    #             user_mod = __import__(user_mod_name)         # type: ignore comment;
+    #             content = str(user_mod.HTML) or "User module did not return anything in <b>HTML</b> variable"
+    #             del(sys.modules[user_mod_name])
+    #             return title, content
+
+    #         code_data = mdb.Database.open("database").open_table("codepages").find({"hyperlink": codepage})
+    #         await render_template(c.frn_head)
+    #         if not code_data:
+    #             return await render_template("{}page.html".format(c.frn), content="Code page {} has not been found".format(codepage), title="Not found"), 404
+    #         else:
+    #             title, content = ch(code_data, request.method)
+    #             await render_template("{}page.html".format(c.frn), content=content, title=title)
+    #         return await render_template(c.frn_foot)
+    #     gc.collect()
+    #     return await f(codepage)
+    
+    # @server.route("async/page/<staticpage>")
+    # async def async_static_page(request, staticpage):
+    #     async def f(staticpage):
+    #         if file_exists("/pages/{0}.md".format(staticpage)):
+    #             with open("/pages/{0}.md".format(staticpage)) as f:
+    #                 await render_template(c.frn_head)
+    #                 await render_template("{}page.html".format(c.frn), content=f.read(), title=staticpage)
+    #                 await render_template(c.frn_foot)
+    #         else:
+    #             return await error_page(404)
+    #     gc.collect()
+    #     return await f(staticpage)
+
+
+
+
+class ALinks():
+    none= []
+    # Section name
+    # Name      Path        (optional) FontAwesome Icon
+    blog= [
+        "Manage you blogs", [
+        ["List blogs",  "/admin/blog",      "fa-solid fa-list-ol"],
+        ["Write blog",  "/admin/new/blog",  "fa-solid fa-file-circle-plus"],
+    ]]
+    servertime= [
+        "Be on time", [
+        ["Sync now",    "/admin/servertime/sync",   "fa-solid fa-rotate"],
+    ]]
+    filesys= [
+        "Browse folders", [
+        ["Root",        "/admin/files/browse/",         "fa-solid fa-folder-tree"],
+        ["Blogs",       "/admin/files/browse/blogs",    "fa-solid fa-blog"],
+        ["Pages",       "/admin/files/browse/pages",    "fa-regular fa-file-lines"],
+        ["Database",    "/admin/files/browse/database", "fa-solid fa-database"],
+        ["Themes",      "/admin/files/browse/themes",   "fa-solid fa-palette"],
+        ["SD Card",     "/admin/files/browse/sd",       "fa-solid fa-sd-card"],
+    ]]
+    database=[
+        "Manage data tables", [
+        ["List Tables",     "/admin/database",                      "fa-solid fa-list-ul"],
+        ["Create table",    "/admin/new/table",                     "fa-solid fa-table-list"],
+        ["Show schema",     "/admin/database/table?act=schema",  "fa-solid fa-sitemap"],
+        ["Query data",      "/admin/database/table?act=query",   "fa-solid fa-clipboard-question"],
+        ["Insert data",     "/admin/database/table?act=insert",   "fa-solid fa-plus"],
+    ]]
+    code=[
+        "Management of Code Pages", [
+        ["List Codes",          "/admin/code",          "fa-solid fa-list-ul"],
+        ["Create new",          "/admin/new/code",      "fa-solid fa-file-circle-plus"],
+        ["About Code Pages",    "/admin/code/about",    "fa-solid fa-file-circle-question"],
+    ]]
+    page= [
+        "Static pages management", [
+        ["List pages",      "/admin/page", "fa-solid fa-list-ol"],
+        ["Create new page", "/admin/new/page", "fa-solid fa-file-circle-plus"],
+    ]]
+    
+
+class Admin():
+    def fs(path = "/") -> dict:
+        def color(used, available):
+            percent = (used / available) * 100
+            if percent < 50:
+                blue = 255 * (1 - (2 * (percent / 100)))
+                green = 255 * (2 * (percent / 100))
+                return '#00{:02x}{:02x}'.format(int(green), int(blue))
+            elif percent < 75:
+                red = 255 * ((percent - 50) / 25)
+                green = 255
+                return '#{:02x}{:02x}00'.format(int(red), int(green))
+            else:
+                red = 255
+                green = 255 * (1 - ((percent - 75) / 25))
+                return '#{:02x}{:02x}00'.format(int(red), int(green))
+
+        stat = os.statvfs(path)
+        size = stat[0] * stat[2]
+        used = size - stat[0] * stat[3]
+        return {"used": used, "total": size, "color": color(used, size)}
+
+    def isAdmin(req):
+        sesKey = ses.extractFromCookie(req)
+        if ses.is_valid(sesKey):
+            if ses.get_data(sesKey).get("isAdmin") == 1:
+                ses.refresh_session(sesKey)
+                return True
+        return False
+
+    def breadcrumb(s):
+        parts = s.split(":")
+        objects = []
+        path = ""
+        for _, part in enumerate(parts):
+            path += part
+            objects.append({"P": path, "T": part})
+            path += ":"
+        return objects
+
+    # TODO do not forget to remove
+    @server.route("/admin/make")
+    def _make(request):
+        follow = request.query.get("follow", "/admin")
+        return render_template("{}redirect.html".format(c.adm), location=follow), 200, "text/html", {"set-cookie": "PhewSession={}; Path=/".format(ses.create(request.peer["ip"], {"isAdmin":1, "user":1}))}
+
+    # render admin dashboard
+    @server.route("/admin")
+    async def a_index(request):
+        @admin_required
+        async def f(request):
+            global server
+            bytes_sent, req_stat = server.get_stats()
+            now = time.localtime()
+            await render_template(c.adm_head, leftmenu=ALinks.none)
+            await render_template("{}admin.html".format(c.adm),
+                    fs=Admin.fs("/"),
+                    sd=Admin.fs("/sd") if SDCard_available else {"used":0, "total":0, "color": "000000"},
+                    servertime = "{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4]),
+                    bytes_sent = str(bytes_sent),
+                    req_stats = req_stat
+            )
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+    @server.route("/admin/login", methods=["POST"])
+    def a_login(request):
+        username = request.form.get("username", None)
+        password = request.form.get("password", None)
+        result = mdb.Database.open("database").open_table("users").find({"login": username, "pass": password})
+        if result:
+            return render_template("{}redirect.html".format(c.adm), location="/admin"), 200, "text/html", {"set-cookie": "PhewSession={0}; Path=/".format(ses.create(request.peer.ip, {"isAdmin":result["isadmin"], "user":1}))}
+        else:
+            return render_template(c.adm_login)
+
+
+    @server.route("/admin/logout")
+    def a_logout(request):
+        return render_template("{}redirect.html".format(c.adm), location="/"), 200, "text/html", {"set-cookie": f"PhewSession=None; Path=/"}
+
+
+    @server.route("/admin/new/<obj>")
+    async def a_new(request, obj):
+        @admin_required
+        async def f(request, obj):
+            if obj == "blog":
+                await render_template(c.adm_head, leftmenu=ALinks.blog)
+                await render_template("{}blog-edit.html".format(c.adm), blog_data=[0, "", ""])
+
+            elif obj == "code":
+                await render_template(c.adm_head, leftmenu=ALinks.code)
+                await render_template("{}code-edit.html".format(c.adm), code_data=[ 0, "", "", "", False, "def myAdder(x):\n  result = x**x + x**x\n  return result\n\n# HTML variable is used by caller to show final code\nHTML = 'Answer is {}'.format(myAdder(4))"])
+
+            elif obj == "page":
+                await render_template(c.adm_head, leftmenu=ALinks.page)
+                await render_template("{}page-edit.html".format(c.adm), page_data=["", ""])
+
+            elif obj == "table":
+                await render_template(c.adm_head, leftmenu=ALinks.database)
+                await render_template("{}db-tbl-create.html".format(c.adm),
+                    new_tbl_name = request.query.get("t", "") )
+
+            elif obj == "row":
+                await render_template(c.adm_head, leftmenu=ALinks.database)
+                tbl = request.query.get("t", None)
+                if tbl:
+                    await render_template("{}db-row-begin.html".format(c.adm), table=tbl)  # new row begin
+                    #each field
+                    for name, prop in mdb.Database.open("database").open_table(tbl).columns.items():
+                        length = prop["max_length"] if prop["data_type"] == "str" else ""
+                        await render_template("{}db-row-{}.html".format(c.adm, prop["data_type"]), name=name, maxlength=length)
+                    # buttons
+                    await render_template("{}db-row-end.html".format(c.adm))
+            else:
+                await render_template(c.adm_head, leftmenu=ALinks.none)
+
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, obj)
+
+
+    @server.route("/admin/blog")
+    async def a_blog(request):
+        @admin_required
+        async def f(request):
+            result = []
+
+            blogs_table = mdb.Database.open("database").open_table("blogs")
+            for itm in blogs_table.scan({}, True):
+                path = "/blogs/{}/{}.md".format(itm["path"], itm["_row"])
+                result.append([
+                    itm["_row"],           # 0
+                    itm["title"],          # 1
+                    itm["authorid"],       # 2
+                    itm["published"],      # 3
+                    path,                  # 4
+                    itm["size"],           # 5
+                    itm["readtime"]        # 6
+                ])
+
+            if len(result)>0:
+                await render_template(c.adm_head, leftmenu=ALinks.blog)
+                await render_template("{}blog.html".format(c.adm), blist=result,)
+                return await render_template(c.adm_foot)
+                
+            else:
+                return await render_template_noreplace("{}generic.html".format(c.adm), 
+                    content="No blogs available. <a href=\"/admin/new/blog\">Create new</a>",
+                    leftmenu=ALinks.blog
+            )
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/blog/save", methods=["POST"])
+    async def a_b_save(request):
+        @admin_required
+        async def f(request):
+            try:
+                blog_id = int(request.form.get("blog_id", 0))
+            except ValueError:  # type: ignore comment;
+                return await render_template("{}generic.html".format(c.adm), 
+                    content="Blog ID error. ID should be integer",
+                    leftmenu=ALinks.blog
+                )
+
+            # create new record
+            blogs_table = mdb.Database.open("database").open_table("blogs")
+            if blog_id == 0:
+                now = time.localtime()
+                blog_path = "{0}-{1:02d}".format(now[0], now[1])
+
+                path = "/blogs/{0}".format(blog_path)
+                if not dir_exists(path):
+                    os.mkdir(path)
+
+                if blogs_table.insert({
+                    "title": request.form.get("title", None), 
+                    "authorid": 999, 
+                    "published": "{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4]), 
+                    "path": blog_path, 
+                    "readtime": request.form.get("readtime", "0:00"),
+                    "size": len(request.form.get("blog", None))
+                }):
+                    with open("/blogs/{0}/{1}.md".format(blog_path, blogs_table.current_row), 'w') as f:
+                        f.write(request.form.get("blog", None))
+            # Update existing record
+            else:
+                data = blogs_table.find_row(blog_id)
+                data["d"]["title"] = request.form.get("title", None)
+                data["d"]["readtime"] = request.form.get("readtime", "0:00")
+                data["d"]["size"] = len(request.form.get("blog", None))
+
+                with open("/blogs/{0}/{1}.md".format(data["d"]["path"], blog_id), 'w') as f:
+                    f.write(request.form.get("blog", None))
+                    blogs_table.update_row(blog_id, data["d"])
+            return await Admin.a_blog(request)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/blog/edit/<blog_id>")
+    async def a_b_edit(request, blog_id):
+        @admin_required
+        async def f(request, blog_id):
+            # check if blog is is numeric
+            try:
+                blog_id = int(blog_id)
+            except ValueError:  # type: ignore comment;
+                return await render_template("{}generic.html".format(c.adm), 
+                    content="Blog ID error",
+                    leftmenu=ALinks.blog
+                )
+            data = mdb.Database.open("database").open_table("blogs").find_row(blog_id)
+
+            blog = []
+            blog.append(data["r"])              # 0
+            blog.append(data["d"]["title"])     # 1
+            data_file_path = "/blogs/{0}/{1}.md".format(data["d"]["path"], data["r"])
+            if file_exists(data_file_path):
+                with open(data_file_path, "r") as f:
+                    blog.append(f.read())       # 2
+            else:
+                blog.append("WARNING: data file at path {} not found".format(data_file_path))
+            await render_template(c.adm_head, leftmenu=ALinks.blog)
+            await render_template("{}blog-edit.html".format(c.adm), 
+                    blog_data=blog,
+            )
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, blog_id)
+
+
+    @server.route("/admin/blog/delete/<blog_id>")
+    async def a_b_delete(request, blog_id):
+        @admin_required
+        async def f(request, blog_id):
+            # check if blog is is numeric
+            try:
+                blog_id = int(blog_id)
+            except ValueError:  # type: ignore comment;
+                return await render_template("{}generic.html".format(c.adm), 
+                    content="Blog ID error",
+                    leftmenu=ALinks.blog
+                )
+
+            blogs_table = mdb.Database.open("database").open_table("blogs")
+            data = blogs_table.find_row(blog_id)
+            data_file_path = "/blogs/{0}/{1}.md".format(data["d"]["path"], data["r"])
+            if file_exists(data_file_path):
+                os.remove(data_file_path)
+            blogs_table.delete_row(blog_id)
+            return await Admin.a_blog(request)
+        # gc.collect()
+        return await f(request, blog_id)        
+
+
+    @server.route("/admin/servertime")
+    async def a_time(request):
+        @admin_required
+        async def f(request):
+            now = time.localtime()
+            return await render_template("{}generic.html".format(c.adm), 
+                    content="Time zone: {5} and server time: {0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4], c.timezone),
+                    leftmenu=ALinks.servertime
+            )
+        # gc.collect()
+        return await f(request) 
+
+
+    @server.route("/admin/servertime/sync")
+    async def a_t_sync(request):
+        @admin_required
+        async def f(request, ses):
+            now = time.localtime()
+            before = "{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4])
+            import libs.ntptime2    # type: ignore comment;
+            libs.ntptime2.settime(c.timezone)
+            del(libs.ntptime2)
+            now = time.localtime()
+            after = "{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4])
+            ses.refresh_session(ses.extractFromCookie(request), True)
+            return await render_template("{}generic.html".format(c.adm), 
+                    content="Before sync: {0} and After sync: {1}".format(before, after),
+                    leftmenu=ALinks.servertime)
+        # gc.collect()
+        return await f(request, ses) 
+
+
+    @server.route("/admin/files")
+    async def a_files(request):
+        @admin_required
+        async def f(request):
+            result = []
+            for loc in ALinks.filesys[1]:
+                # last folder name from href
+                result.append([loc[0], loc[1].split("/")[-1], "Dir", ""])
+            await render_template(c.adm_head, leftmenu=ALinks.filesys)
+            await render_template("{}file.html".format(c.adm), breadcrumb=[], parent=None, dlist=result, flist=[])
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/files/browse/<location>")
+    async def a_f_browse(request, location):
+        @admin_required
+        async def f(request, location):
+            current = location.replace("..", "").strip(":")
+            location_path = "/{}".format(current.replace(":", "/"))
+            dlist = []
+            flist = []
+            if not dir_exists(location_path):
+                msg = "Location {} does not exist or inaccesible".format(location_path)
+                parent = ""
+            else:
+                msg =  ""
+                for loc in os.ilistdir(location_path):
+                    name = "{0}".format(loc[0])
+                    if loc[1] == 0x8000:        #file
+                        size = loc[3]
+                        path = "{0}:{1}".format(current, loc[0]) if current else "{}".format(loc[0])
+                        type = "File"
+                        flist.append([name, path, type, size])
+                    elif loc[1] == 0x4000:        #folder
+                        size = ""
+                        path = "{0}:{1}".format(current, loc[0]) if current else "{}".format(loc[0])
+                        type = "Dir"
+                        dlist.append([name, path, type, size])
+                    else:
+                        pass
+
+                    parent = ":".join(current.split(":")[:-1]) if len(current.split(":"))> 1 else " "
+            await render_template(c.adm_head, leftmenu=ALinks.filesys)
+            await render_template("{}file.html".format(c.adm), breadcrumb=Admin.breadcrumb(current), parent=parent, dlist=dlist, flist=flist, msg=msg)
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, location)
+
+
+    @server.route("/admin/files/view/<location>")
+    async def a_f_view(request, location):
+        @admin_required
+        async def f(request, location):
+            current = location.replace("..", "").strip(":")
+            with open("/{}".format(current.replace(":", "/")), "r") as f:
+                await render_template(c.adm_head, leftmenu=ALinks.filesys)
+                await render_template_noreplace("{}file-view-begin.html".format(c.adm), 
+                    file_title="/{}".format(current.replace(":", "/")),
+                )
+                while True:
+                    data = f.read(256)
+                    if not data:
+                        break
+                    await render_template("{}string.html".format(c.adm), s=data.replace(">", "&gt;").replace("<", "&lt;"))
+                
+                await render_template_noreplace("{}file-view-end.html".format(c.adm), 
+                    back_location = ":".join(current.split(":")[:-1]),
+                )
+                return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, location)        
+
+
+    @server.route("/admin/files/del/<location>", methods=["GET", "POST"])
+    async def a_f_del(request, location):
+        @admin_required
+        async def f(request, location):
+            return_location = request.query.get("return", None)
+            current = location.replace("..", "").replace(":", "/").split("/")
+            cleaned_path = "/{}".format('/'.join([part for part in current if part]))
+
+            for safe_location in c.safe_locations:
+                if cleaned_path.startswith(safe_location.rstrip("*")):
+                    return await render_template("{}string.html".format(c.adm), s="{} is a safe location and cannot be deleted".format(cleaned_path))
+            if file_exists(cleaned_path):
+                os.remove(cleaned_path)
+            else:
+                return await render_template("{}string.html".format(c.adm), s="Error: Provided location {} does not exist".format(cleaned_path))
+
+            if return_location == "page":
+                return await Admin.a_page(request)
+            
+            if return_location == "file":
+                return_path = ":".join(current[:-1])
+                return await Admin.a_f_browse(request, return_path)
+            
+            return await render_template("{}string.html".format(c.adm), s="File '{0}' deleted. Need to return to '{1}'".format(location, return_location))
+
+        # gc.collect()
+        return await f(request, location)
+
+
+    @server.route("/admin/database")
+    async def a_database(request):
+        @admin_required
+        async def f(request):
+            data=[]
+            for table_name in mdb.Database.open("database").list_tables():
+                stats = mdb.Database.open("database").open_table(table_name).stats()
+                data.append([
+                    table_name,                 # 0
+                    len(stats["Columns"]),      # 1
+                    stats["Data_Size"],         # 2
+                    stats["Pages_Count"],       # 3
+                    stats["Current_row"]        # 4
+                ])
+            await render_template(c.adm_head, leftmenu=ALinks.database)
+            await render_template("{}database.html".format(c.adm), tlist = data )
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/database/table")
+    async def a_database_tbl(request):
+        @admin_required
+        async def f(request):
+            action = request.query.get("act", None)
+            tables = mdb.Database.open("database").list_tables()
+
+            await render_template(c.adm_head, leftmenu=ALinks.database)
+            await render_template("{}db-tbl-choose.html".format(c.adm), tbl = tables, action=action)
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/database/schema/<table>")
+    async def a_db_schema(request, table):
+        @admin_required
+        async def f(request, table):
+            if table not in mdb.Database.open("database").list_tables():
+                return await render_template_noreplace("{}generic.html".format(c.adm),
+                    leftmenu=ALinks.database,
+                    content="Table '{}' was not found".format(table)
+                )
+            data=[]
+            cur_tbl = mdb.Database.open("database").open_table(str(table))
+            for name, prop in cur_tbl.columns.items():
+                length = prop["max_length"] if prop["data_type"] == "str" else ""
+                data.append({
+                    "Name": name,
+                    "Type": prop["data_type"],
+                    "Length": length
+                })
+            tdef = {}
+            tdef["per-page"]= cur_tbl.rows_per_page
+            tdef["max"]= cur_tbl.max_rows
+            del(cur_tbl)        # clear some RAM ~6kb
+
+            await render_template(c.adm_head, leftmenu=ALinks.database)
+            await render_template("{}db-schema.html".format(c.adm),
+                table = str(table),
+                tdef = tdef,
+                clist = data
+            )
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, table)
+
+
+    @server.route("/admin/database/query/<table>", methods=["GET", "POST"])
+    async def a_db_query(request, table, **kwargs):
+        @admin_required
+        async def f(request, table, **kwargs):
+            jump_to_table = []
+            current_table_found = False
+            for tb in mdb.Database.open("database").list_tables():
+                if tb == table:
+                    jump_to_table.append([tb, 1])
+                    current_table_found = True
+                else:
+                    jump_to_table.append([tb, 0])
+
+            if not current_table_found:
+                return await render_template_noreplace("{}generic.html".format(c.adm),
+                    leftmenu=ALinks.database,
+                    content="Table '{}' was not found".format(table)
+                )
+            cur_tbl = mdb.Database.open("database").open_table(str(table))
+
+            columns=[]
+            try:
+                # maybe we come here from other function and kwargs for  colums order is set 
+                columns = json.loads(request.form.get("sorted", None)) if "columnsOrder" not in kwargs.keys() else json.loads(kwargs["columnsOrder"])
+            except:
+                columns = []
+                for col in cur_tbl.columns.keys():
+                    columns.append({"n": col, "v": 1})
+
+            columns_enabled =  [item['n'] for item in columns if item['v'] == 1]
+            # maybe we come here from other function and kwargs for query string is set 
+            query_string = request.form.get("query", None) if "returnQuery" not in kwargs.keys() else kwargs["returnQuery"]
+            
+            error = ""
+            query = ""
+            if query_string:
+                try:
+                    t="true"
+                    f="false"
+                    query = json.loads(query_string.replace("True", t).replace("True", t).replace("False", f).replace("FALSE", f))
+                except ValueError:    # type: ignore comment;    # malformed JSON query
+                    error = "Malformed query: {}".format(query_string)
+            
+            result=[]
+            do = request.form.get("do", None) if "do" not in kwargs.keys() else kwargs["do"]
+            if not error and do:
+                from ucollections import OrderedDict
+                for data_row in cur_tbl.scan(query, True):
+                    ordered_data = OrderedDict(data_row)
+                    row = [ordered_data[field] for field in ['_row'] + columns_enabled]
+                    result.append(row)
+
+            del(cur_tbl)        # clear some RAM ~6kb
+
+            await render_template(c.adm_head, leftmenu=ALinks.database)
+            await render_template_noreplace("{}db-query.html".format(c.adm),
+                table_jump = jump_to_table,
+                table = str(table),
+                error_msg=error,
+                columns= columns,
+                last_query = query_string)
+            await render_template_noreplace("{}db-query-result.html".format(c.adm),
+                table = str(table),
+                columns= columns,
+                dlist = result)
+            return await render_template(c.adm_foot)
+
+        return await f(request, table, **kwargs)
+
+    @server.route("/admin/database/row/save", methods=["POST"])
+    async def a_db_row_save(request):
+        @admin_required
+        async def f(request):
+            tbl_name = request.form.get("tablename", None)
+            if not tbl_name:
+                return "error, table not known"
+            if tbl_name not in mdb.Database.open("database").list_tables():
+                return await render_template_noreplace("{}generic.html".format(c.adm),
+                    leftmenu=ALinks.database,
+                    content="Table '{}' was not found".format(tbl_name)
+                )
+            
+            table_obj = mdb.Database.open("database").open_table(tbl_name)
+            tbl_data = {}
+            tbl_cols = table_obj.columns.items()
+
+            for col, prop in tbl_cols:
+                if prop["data_type"] == "bool":
+                    tbl_data[col] = bool(request.form.get("f-{}".format(col), None))
+                elif prop["data_type"] == "float":
+                    tbl_data[col] = float(request.form.get("f-{}".format(col), None))
+                elif prop["data_type"] == "int":
+                    tbl_data[col] = int(request.form.get("f-{}".format(col), None))
+                else:
+                    tbl_data[col] = request.form.get("f-{}".format(col), None)
+
+            if not table_obj.insert(tbl_data):
+                # report unsuccessful insert
+                print("report unsuccessful insert")
+                pass
+
+            # if request.form.get("continue-insert", None) == "1":
+            #     print("Vyksta redirektas, pilnas")
+            #     return render_template("{}redirect.html".format(c.adm), location="/admin/new/row?t={}".format(tbl_name)), 200, "text/html", {}
+
+            return await Admin.a_database(request)
+
+        return await f(request)
+
+
+    @server.route("/admin/database/del-rows/<table>", methods=["POST"])
+    async def a_db_del_row(request, table):
+        @admin_required
+        async def f(request, table):
+            if table not in mdb.Database.open("database").list_tables():
+                return await render_template_noreplace("{}generic.html".format(c.adm),
+                    leftmenu=ALinks.database,
+                    content="Table '{}' was not found".format(table)
+                )
+
+            cur_tbl = mdb.Database.open("database").open_table(str(table))
+            ids = request.form.get("_rid[]", None)
+            if ids is not None:
+                for rid in ids:
+                    cur_tbl.delete_row(int(rid))
+
+            columnsOrderDelete = request.form.get("columnsOrderDelete", None)
+            returnQueryDelete = request.form.get("returnQueryDelete", None)
+
+            return await Admin.a_db_query(request, table, columnsOrder=columnsOrderDelete, returnQuery=returnQueryDelete, do=1)
+        # gc.collect()
+        return await f(request, table)
+
+
+    @server.route("/admin/database/new_tbl/save", methods=["POST"])
+    async def a_db_tbl_save(request):
+        @admin_required
+        async def f(request):
+            tbl_def_dict = {}
+            tbl_name = request.form.get("tbl_name", None)
+            for def_row in request.form.get("tbl_def", "").split("\n"):
+                col, type = def_row.strip().split(" ")
+
+                if type=="str":
+                    tbl_def_dict[col] = str
+                elif type=="int":
+                    tbl_def_dict[col] = int
+                elif type=="bool":
+                    tbl_def_dict[col] = bool
+                elif type=="float":
+                    tbl_def_dict[col] = float
+
+            mdb.Database.open("database").create_table(tbl_name, tbl_def_dict)    
+            return await Admin.a_database(request)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/database/drop/<table>")
+    async def a_db_drop(request, table):
+        @admin_required
+        async def f(request, table):
+            if table not in mdb.Database.open("database").list_tables():
+                return await render_template_noreplace("{}generic.html".format(c.adm),
+                    leftmenu=ALinks.database,
+                    content="Table '{}' was not found".format(table)
+                )
+            cur_tbl = mdb.Database.open("database").open_table(str(table))
+            cur_tbl.drop()
+            del(cur_tbl)        # clear some RAM ~6kb
+            return await Admin.a_database(request)
+        # gc.collect()
+        return await f(request, table)
+
+
+    @server.route("/admin/code")
+    async def a_code(request):
+        @admin_required
+        async def f(request):
+            code_list = []
+            code_table = mdb.Database.open("database").open_table("codepages")
+            for i in code_table.scan({}, True):
+                code_list.append([
+                    i["_row"],            # 0
+                    i["hyperlink"],       # 1
+                    i["enabled"],         # 2
+                    i["methods"],         # 3
+                    i["title"],           # 4
+                    i["exec_path"],       # 5
+                    i["created"],         # 6
+                    i["modified"]         # 7
+                ])
+
+            if len(code_list)== 0:
+                return await render_template_noreplace("{}generic.html".format(c.adm), 
+                    content="No code pages available. <a href=\"/admin/new/code\">Create new</a>",
+                    leftmenu=ALinks.code)
+            await render_template(c.adm_head, leftmenu=ALinks.code)
+            await render_template("{}code.html".format(c.adm), code_list=code_list)
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/code/save", methods=["POST"])
+    async def a_c_save(request):
+        @admin_required
+        async def f(request):
+            try:
+                code_id = int(request.form.get("code_id", 0))
+            except ValueError:  # type: ignore comment;
+                return await render_template("{}generic.html".format(c.adm), 
+                    content="Code ID error- should be integer",
+                    leftmenu=ALinks.code )
+
+            # create new record
+            codes_table = mdb.Database.open("database").open_table("codepages")
+            location = "/pages/codes/"
+            now = time.localtime()
+            created = "{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}".format(now[0], now[1], now[2], now[3], now[4])
+            modified = created
+            # Create new rcord
+            methods = " ".join(request.form.get("methods[]", ""))
+            enabled = True if request.form.get("enabled", 0) == "1" else False
+            if code_id == 0:
+
+                # avoid generation of file name, that already exists
+                alphabet = "ABCDEFGHIJKLMNOPQRSTUXWYZ1234567890"
+                code_path = "Code{0}".format( ses.generate_random_string(8, alphabet))
+                path_content = os.listdir(location)
+                while True:
+                    if code_path in path_content:
+                        code_path = "{0}".format( ses.generate_random_string(8, alphabet))
+                    else:
+                        break
+                # new record inserted successfuly
+                if codes_table.insert({
+                    "hyperlink": request.form.get("hyperlink", code_path),
+                    "exec_path": code_path,
+                    "title": request.form.get("title", "No title was provided"),
+                    "methods": methods,
+                    "enabled": enabled,
+                    "created": created,
+                    "modified": modified
+                }):
+                    with open("{0}{1}.py".format(location, code_path), 'w') as f:
+                        f.write(request.form.get("code", None))
+            # Update existing record
+            else:
+                data = codes_table.find_row(code_id)
+                data["d"]["title"] = request.form.get("title", None)
+                data["d"]["hyperlink"] = request.form.get("hyperlink", None)
+                data["d"]["methods"] = methods
+                data["d"]["enabled"] = enabled
+                data["d"]["modified"] = modified
+
+                data_file_path = "/pages/codes/{0}.py".format(data["d"]["exec_path"])
+                with open(data_file_path, 'w') as f:
+                    f.write(request.form.get("code", None))
+                    codes_table.update_row(code_id, data["d"])
+
+            return await Admin.a_code(request)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/code/edit/<code_id>")
+    async def a_c_edit(request, code_id):
+        @admin_required
+        async def f(request, code_id):
+            # check if blog is is numeric
+            try:
+                code_id = int(code_id)
+            except ValueError:  # type: ignore comment;
+                return await render_template("{}generic.html".format(c.adm), 
+                    content="Code ID error",
+                    leftmenu=ALinks.code)
+
+            data = mdb.Database.open("database").open_table("codepages").find_row(code_id)
+            code=[
+                data["r"],
+                data["d"]["hyperlink"],
+                data["d"]["title"],
+                data["d"]["methods"],
+                data["d"]["enabled"],
+            ]
+            data_file_path = "/pages/codes/{0}.py".format(data["d"]["exec_path"])
+            if file_exists(data_file_path):
+                with open(data_file_path, "r") as f:
+                    code.append(f.read())
+            else:
+                code.append("WARNING: data file at path {} not found".format(data_file_path))
+            await render_template(c.adm_head, leftmenu=ALinks.code)
+            await render_template("{}code-edit.html".format(c.adm), code_data=code)
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, code_id)
+
+
+    @server.route("/admin/page")
+    async def a_page(request):
+        @admin_required
+        async def f(request):
+            pages_list = []
+            root = "/pages/"
+            for entry in os.ilistdir(root):
+                if entry[0] != "codes":
+                    file_without_ext = entry[0][:entry[0].rindex(".")]
+                    pages_list.append([file_without_ext, entry[3]])
+            if len(pages_list)>0:
+                await render_template(c.adm_head, leftmenu=ALinks.page)
+                await render_template("{}page.html".format(c.adm), plist=pages_list)
+                return await render_template(c.adm_foot)
+            else:
+                return await render_template_noreplace("{}generic.html".format(c.adm), 
+                    content="No pages available. <a href=\"/admin/new/page\">Create new</a>",
+                    leftmenu=ALinks.page)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/page/edit/<pagename>")
+    async def a_p_edit(request, pagename):
+        @admin_required
+        async def f(request, pagename):
+            page = [str(pagename)]
+            data_file_path = "/pages/{0}.md".format(pagename)
+            if file_exists(data_file_path):
+                with open(data_file_path, "r") as f:
+                    page.append(f.read())
+            else:
+                page.append("WARNING: data file at path {} not found".format(data_file_path))
+
+            await render_template(c.adm_head, leftmenu=ALinks.page)
+            await render_template("{}page-edit.html".format(c.adm), page_data= page)
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request, pagename)
+
+
+    @server.route("/admin/page/save", methods=["POST"])
+    async def a_p_save(request):
+        @admin_required
+        async def f(request):
+            filename = request.form.get("filename", None)
+            #clear unwanted symbols
+            for symbol in "./\\~`!@#$%^&*()-=_+":
+                filename = filename.replace(symbol, "")
+            if filename:
+                with open("/pages/{0}.md".format(filename), 'w') as f:
+                    f.write(request.form.get("pagetext", None))
+                return await Admin.a_page(request)
+
+            return await render_template_noreplace("{}generic.html".format(c.adm), 
+                    content="Filename was left blank. <a href='#' onclick='history.back()'>Go back</a> and try again",
+                    leftmenu=ALinks.page)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/sessions")
+    async def a_sessions(request):
+        @admin_required
+        async def f(request, seslib):
+            if len(seslib.SERVER_SESSIONS) > 0:
+                sl=[]
+                for s in seslib.SERVER_SESSIONS:
+                    r = time.localtime(s[1])      # for readable time
+                    sl.append([
+                        s[0],     # session key
+                        "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(r[0], r[1], r[2], r[3], r[4], r[5]),
+                        s[2],     # ip
+                        s[3],     # data
+                        True if s[0] == seslib.extractFromCookie(request) else False     # mark own session
+                    ])
+                await render_template(c.adm_head, leftmenu=ALinks.none)
+                await render_template("{}sessions.html".format(c.adm), slist=sl)
+                return await render_template(c.adm_foot)
+            else:
+                return await render_template_noreplace("{}generic.html".format(c.adm), 
+                    content="No sessions. Strange! How the hell you are here?",
+                    leftmenu=ALinks.none)
+        # gc.collect()
+        return await f(request, ses)
+
+
+    @server.route("/admin/console")
+    async def a_console(request):
+        @admin_required
+        async def f(request):
+            await render_template(c.adm_head, leftmenu=ALinks.none)
+            await render_template("{}console.html".format(c.adm))
+            return await render_template(c.adm_foot)
+        # gc.collect()
+        return await f(request)
+
+
+    @server.route("/admin/console/ajax", methods=["POST"])
+    async def a_c_ajax(request):
+        async def f(request):
+            if not Admin.isAdmin(request):
+                return await "Err: not authorized"
+
+            # return await "Sorry, console feature is disabled for public demo use"
+            code = str(request.form.get("code", None))
+            print("--------- Console command ---------")
+            print(code)
+            print("-"*35)
+
+            for codeline in code.split("\n"):
+                await ">>> {0}\n".format(codeline)
+
+            # Capture the output of the script
+            output = StringIO()
+            os.dupterm(output)
+            # Execute the script
+            try:
+                exec(code)
+            except BaseException as err:        # type: ignore comment;
+                await str(err)
+            finally:
+                # Reset the stdout stream
+                os.dupterm(None)
+            
+            return await output.getvalue()
+        # gc.collect()
+        return await f(request)
+
+
+# ----------------------------------------------------------------
+@server.catchall()
+def catchall(request):
+    return error_page(404), 404
+
+loop = uasyncio.get_event_loop()
+loop.create_task(ses.clear_ended())
+server.run()

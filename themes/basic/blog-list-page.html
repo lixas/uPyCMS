@@ -1,0 +1,9 @@
+<!-- blog list pages begin -->
+<div class="buttons is-grouped is-centered are-large mt-6">
+  <a {{ "href=\"/blog?page={}\"".format(page-1) if page > 1 else "disabled" }} class="button is-halfwidth is-primary is-light is-responsive"><span class="fas fa-arrow-left mr-3"></span>Newer entries</a>
+  <div class="field has-addons">
+    <p class="control" style="margin-top: 10px;"><a class="button is-static">{{"{}".format(page)}}</a></p>
+  </div>
+  <a {{ "href=\"/blog?page={}\"".format(page+1) if next_enabled else "disabled" }} class="button is-halfwidth is-primary is-light is-responsive">Older entries<span class="fas fa-arrow-right ml-3"></span></a>
+</div>
+<!-- blog list pages end -->

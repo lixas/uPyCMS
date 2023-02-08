@@ -1,0 +1,21 @@
+{{f"""
+<article class="media">
+  <figure class="media-left">
+    <p class="image is-128x128">
+      <img src="https://bulma.io/images/placeholders/128x128.png">
+    </p>
+  </figure>
+  <div class="media-content">
+    <div class="content">
+      <p>
+        <a class="title is-4" href="/blog/{data[0]}"><strong>{data[1]}</strong></a>
+        <br />{data[2]}
+      </p>
+    </div>
+    <div class="tags">
+      <span class="tag"><i class="fa-solid fa-clock mr-1"></i>Published {data[3]}</span>
+      <span class="tag"><i class="fa-solid fa-book mr-1"></i>{data[4]} min read</span>
+    </div>
+  </div>
+</article>
+"""}}

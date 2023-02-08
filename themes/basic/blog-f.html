@@ -1,0 +1,12 @@
+{{ render_template("/themes/basic/head.html") }}
+<!-- blog post begin-->
+<h2 class="title">{{title}}</h2>
+<div class="tags">
+  <span class="tag"><i class="fa-solid fa-clock mr-1"></i>Published {{published}}</span>
+  <span class="tag"><i class="fa-solid fa-book mr-1"></i>{{readtime}} min read</span>
+</div>
+<div class="content m-1">
+  <div data-markdown="yes" class="mb-5">{{content}}</div>
+</div>
+<!-- blog post end-->
+{{ render_template("/themes/basic/foot.html") }}

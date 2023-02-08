@@ -1,0 +1,45 @@
+<!-- database begin -->
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/admin/database"><i class="icon fa-solid fa-database"></i></a></li>
+  </ul>
+</nav>
+<div class="table-container">
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Columns</th>
+      <th>Size</th>
+      <th>Pages</th>
+      <th>LastRow</th>
+      <th>Schema</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{"\n".join(["<tr><th><a href=\"/admin/database/query/{0}\">{0}</a></th><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td><a href=\"/admin/database/schema/{0}\"><i class=\"fa-solid fa-sitemap\"></i></a></td></tr>".format(i[0], i[1], i[2], i[3], i[4]) for i in tlist])}}
+  </tbody>
+</table>
+</div>
+<div class="field">
+  <label class="label">Create new table</label>
+  <div class="field has-addons">
+    <div class="control has-icons-left has-icons-right">
+        <input class="input" type="text" name="newTableName" id="newTableName" placeholder="New table name">
+        <span class="icon is-medium is-left">
+          <i class="fa-solid fa-table"></i>
+        </span>
+    </div>
+    <p class="control">
+        <a class="button is-primary" id="sbtn"><i class="fa-solid fa-check"></i></a>
+    </p>
+  </div>
+</div>
+<script>
+  const select = document.querySelector("#sbtn").addEventListener("click", () => {
+    var tbl_name = document.querySelector("#newTableName").value
+    window.location.href = "/admin/new/table?t=" + tbl_name
+
+  });
+</script>
+<!-- database end -->

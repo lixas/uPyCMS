@@ -1,0 +1,5 @@
+<html>
+<title>List example</title>
+<body>List of links for users<ul>
+{{"\n".join(["""<li><a href=\"{1}\" class=\"person\">Page for {0}</a></li>""".format(itm["name"], itm["url"]) for itm in data_placeholder])}}
+</ul></body></html>
