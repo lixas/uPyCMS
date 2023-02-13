@@ -17,13 +17,10 @@
     <div class="columns">
       <div class="column is-one-quarter">
         <div class="subtitle">Columns &amp; order</div>
-        <code>TODO: indeterminate checkbox</code>
-        <!-- https://css-tricks.com/indeterminate-checkboxes/
-        https://jsfiddle.net/b81nsu7p/
-        https://codepen.io/jakob-e/pen/GRKEzzy -->
-        <label class="checkbox"><input type="checkbox"> [All columns]</label>
+        <label class="checkbox"><input type="checkbox" id="allColumnsCheckbox" checked> [All columns]</label>
+        <div class="divider" style="margin: 10px 0;"></div>
         <ul id="columns_list">
-          {{"\n".join(["<li data-id=\"{0}\"><label class=\"checkbox\" style=\"cursor: n-resize;\"><input type=\"checkbox\" {1}> {0}</label></li>".format(k["n"], "checked" if k["v"] else "") for k in columns])}}
+{{"\n".join(["<li data-id=\"{0}\"><label class=\"checkbox\" style=\"cursor: n-resize;\"><input type=\"checkbox\" {1}> {0}</label></li>".format(k["n"], "checked" if k["v"] else "") for k in columns])}}
         </ul>
       </div>
       <div class="column">

@@ -10,6 +10,7 @@
       <th>Executable path</th>
       <th>Created</th>
       <th>Modified</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tfoot>
@@ -21,10 +22,11 @@
       <th>Executable</th>
       <th>Created</th>
       <th>Modified</th>
+      <th>Actions</th>
     </tr>
   </tfoot>
   <tbody>
-    {{"\n".join(["""<tr><th><a href=\"/admin/code/edit/{0}\">{1}</a></th><td>{2}</td><td>{3}</td><td>{4}</td><td>/pages/codes/{5}.py</td><td>{6}</td><td>{7}</td></tr>""".format(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7]) for i in code_list])}}
+    {{"\n".join(["""<tr><th><a href=\"/admin/code/edit/{0}\">{1}</a></th><td>{2}</td><td>{3}</td><td>{4}</td><td>/pages/codes/{5}.py</td><td>{6}</td><td>{7}</td><td><a href=\"/code/{1}\"><i class="fa-solid fa-eye"></i></a> <a href=\"/admin/code/delete/{0}\"><i class="fa-solid fa-trash-can"></i></a></td></tr>""".format(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7]) for i in code_list])}}
   </tbody>
 </table>
 </div>

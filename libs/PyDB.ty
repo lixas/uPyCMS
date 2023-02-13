@@ -394,12 +394,13 @@ class Table:
         # Calculate what line in the file the row_id will be found at
         looking_for_line = self.__row_id_in_file(row_id)
         # Prevous method of counting lines is not reliable
-        with open(self.__data_file_for_row_id(row_id), 'r') as f:
-            for current_line, line in enumerate(f):
-                if current_line == looking_for_line:
-                    return json.loads(line)
-
-        raise Exception("Could not find row_id {}".format(row_id))
+        if looking_for_line:
+            with open(self.__data_file_for_row_id(row_id), 'r') as f:
+                for current_line, line in enumerate(f):
+                    if current_line == looking_for_line:
+                        return json.loads(line)
+        else:
+            raise Exception("Could not find row_id {}".format(row_id))
 
     def query(self, queries: dict, show_row: bool = False):
         """

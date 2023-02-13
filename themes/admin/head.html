@@ -40,17 +40,18 @@
               <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link"><i class="icon mr-2 fa-regular fa-map"></i>Content</a>
                 <div class="navbar-dropdown">
-                  <a href="/admin/blog" class="navbar-item"><i class="icon mr-3 fa-solid fa-blog"></i>Blogs</a>
-                  <a href="/admin/page" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-word"></i></span>Static Pages</a>
-                  <a href="/admin/code" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-code"></i></span>Dynamic Codes</a>
+                  {{"""<a href="/admin/blog" class="navbar-item"><i class="icon mr-3 fa-solid fa-blog"></i>Blogs</a>""" if "blogs" in enabled_modules else ""}}
+                  {{"""<a href="/admin/page" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-word"></i></span>Static Pages</a>""" if "pages" in enabled_modules else ""}}
+                  {{"""<a href="/admin/code" class="navbar-item"><i class="icon mr-3 fa-regular fa-file-code"></i></span>Dynamic Codes</a>""" if "codes" in enabled_modules else ""}}
                 </div>
               </div>
 
               <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link"><i class="icon mr-2 fa-solid fa-magnifying-glass"></i>Browse</a>
                 <div class="navbar-dropdown">
-                  <a href="/admin/database" class="navbar-item"><i class="icon mr-3 fa-solid fa-database"></i>Database</a>
-                  <a href="/admin/files" class="navbar-item"><i class="icon mr-3 fa-regular fa-folder-open"></i>File system</a>
+                  {{"""<a href="/admin/database" class="navbar-item"><i class="icon mr-3 fa-solid fa-database"></i>Database</a>""" if "database" in enabled_modules else ""}}
+                  {{"""<a href="/admin/files" class="navbar-item"><i class="icon mr-3 fa-regular fa-folder-open"></i>File system</a>""" if "file_manager" in enabled_modules else ""}}
+                  <a href="#backups" class="navbar-item"><i class="icon mr-3 fa-solid fa-box-archive"></i>TODO: Backups</a>
                   <hr class="navbar-divider">
                   <a href="/admin/sessions" class="navbar-item"><i class="icon mr-3 fa-solid fa-users-viewfinder"></i>Sessions</a>
                 </div>
@@ -61,7 +62,8 @@
                 <div class="navbar-dropdown">
                   <a class="navbar-item"><i class="icon mr-3 fa-solid fa-wifi"></i>WiFi</a>
                   <a href="/admin/servertime" class="navbar-item"><i class="icon mr-3 fa-regular fa-clock"></i>Server time</a>
-                  <a href="/admin/console" class="navbar-item"><i class="icon mr-3 fa-solid fa-terminal"></i>Console</a>
+                  {{"""<a href="/admin/console" class="navbar-item"><i class="icon mr-3 fa-solid fa-terminal"></i>Console</a>""" if "console" in enabled_modules else ""}}
+                  <a href="/admin/modules" class="navbar-item"><i class="icon mr-3 fa-solid fa-boxes-stacked"></i>TODO: Modules</a>
                 </div>
               </div>
             </div>

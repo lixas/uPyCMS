@@ -1,6 +1,7 @@
 <!-- Results -->
 <form action="/admin/database/del-rows/{{table}}" method="POST" enctype="multipart/form-data" onsubmit="getColsAndQuery();">
   <div class="table-container">
+    <!-- https://htmldom.dev/assets/demo/drag-and-drop-table-column/index.html -->
     <table class="table is-hoverable">
       <thead>
         <tr>
@@ -8,7 +9,7 @@
         </tr>
       </thead>
       <tbody>
-        {{"\n".join(['<tr>{}</tr>'.format(''.join('<td>{}</td>'.format(item if no!=0 else "<input type=\"checkbox\" name=\"_rid[]\" value=\"{0}\" > {0}".format(item)) for no, item in enumerate(sublist))) for sublist in dlist])}}
+{{"\n".join(['<tr>{}</tr>'.format(''.join('<td>{}</td>'.format(item if no!=0 else "<input type=\"checkbox\" name=\"_rid[]\" value=\"{0}\" > {0}".format(item)) for no, item in enumerate(sublist))) for sublist in dlist])}}
       </tbody>
     </table>
   </div>

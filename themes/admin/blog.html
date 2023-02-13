@@ -10,8 +10,7 @@
       <th>Content Path</th>
       <th>Size</th>
       <th>Read time</th>
-      <th>View</th>
-      <th>Delete</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tfoot>
@@ -23,12 +22,11 @@
       <th>Path</th>
       <th>Size</th>
       <th>Read time</th>
-      <th>View</th>
-      <th>Delete</th>
+      <th>Actions</th>
     </tr>
   </tfoot>
   <tbody>
-    {{"\n".join(["""<tr><th>{0}</th><td><a href=\"/admin/blog/edit/{0}\">{1}</a></td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td><a href=\"/blog/{0}\"><i class="fa-solid fa-eye"></i></a></td><td><a href=\"/admin/blog/delete/{0}\"><i class="fa-solid fa-trash-can"></i></a></td></tr>""".format(i[0], i[1], i[2], i[3], i[4], i[5], i[6]) for i in blist])}}
+    {{"\n".join(["""<tr><th>{0}</th><td><a href=\"/admin/blog/edit/{0}\">{1}</a></td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td><a href=\"/blog/{0}\"><i class="fa-solid fa-eye"></i></a> <a href=\"/admin/blog/delete/{0}\"><i class="fa-solid fa-trash-can"></i></a></td></tr>""".format(i[0], i[1], i[2], i[3], i[4], i[5], i[6]) for i in blist])}}
   </tbody>
 </table>
 </div>
