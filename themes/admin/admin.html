@@ -61,8 +61,14 @@
 </style>
 <!-- admin page begin-->
 <div class="title ml-1 mr-1 m-2">Server time: {{servertime}}</div>
-<div class="title ml-1 mr-1 m-2">Storage</div>
+<div class="title ml-1 mr-1 m-2">Memory and Storage</div>
 <div class="subtitle ml-1 mr-1 m-2" style="display: flex;">
+  <div class="gauge" style="width: 200px; --rotation:{{180/ram['total']*ram['used']}}deg; --color: {{ ram['color'] }}; --background:#e9ecef;">
+    <div class="percentage"></div>
+    <div class="mask"></div>
+    <span class="value">{{int(100/ram['total']*ram['used'])}}%</span>
+    <span class="name">RAM</span>
+  </div>
   <div class="gauge" style="width: 200px; --rotation:{{180/fs['total']*fs['used']}}deg; --color: {{ fs['color'] }}; --background:#e9ecef;">
       <div class="percentage"></div>
       <div class="mask"></div>

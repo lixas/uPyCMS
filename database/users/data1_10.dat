@@ -1,1 +1,1 @@
-{"r": 1, "d": {"login": "lixas", "pass": "grape", "isadmin": 1}}
+{"r": 1, "d": {"login": "lixas", "pass": "mysecret", "isadmin": true}}

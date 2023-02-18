@@ -1,0 +1,7 @@
+{"d": {"name": "blogs", "description": "Your tougths and ideas sharing module", "active": false}, "r": 1}
+{"d": {"name": "codes", "description": "Pages, where python processing logic is required", "active": false}, "r": 2}
+{"d": {"name": "console", "description": "Access full scale console", "active": false}, "r": 3}
+{"d": {"name": "database", "description": "Database management", "active": true}, "r": 4}
+{"d": {"name": "file_manager", "description": "File management capabilities on your uPyCMS", "active": false}, "r": 5}
+{"d": {"name": "pages", "description": "Static pages, based on markdown syntax", "active": false}, "r": 6}
+{"d": {"name": "servertime", "description": "Automatic time syncronization on server", "active": false}, "r": 7}

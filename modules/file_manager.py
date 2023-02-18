@@ -1,9 +1,8 @@
-import gc, uasyncio, os  # type: ignore comment;
-gc.enable()
+import os  # type: ignore comment;
 from libs.phew import server
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required, dir_exists, file_exists, breadcrumb
+from .common import admin_required, dir_exists, file_exists, breadcrumb, active_modules
 
 filesys= [
         "Browse folders", [
@@ -19,12 +18,11 @@ filesys= [
 async def a_files(request):
     @admin_required
     async def f(request):
-        result = []
+        await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
+        await render_template("{}file-chunk-begin.html".format(c.adm), breadcrumb=[], parent=None, msg=None)
         for loc in filesys[1]:
-            # last folder name from href
-            result.append([loc[0], loc[1].split("/")[-1], "Dir", ""])
-        await render_template(c.adm_head, leftmenu=filesys, enabled_modules=c.modules)
-        await render_template("{}file.html".format(c.adm), breadcrumb=[], parent=None, dlist=result, flist=[])
+            await render_template("{}file-chunk-browse.html".format(c.adm), d=[loc[0], loc[1].split("/")[-1], ""])
+        await render_template("{}file-chunk-end.html".format(c.adm))
         return await render_template(c.adm_foot)
     return await f(request)
 
@@ -37,6 +35,8 @@ async def a_f_browse(request, location):
         location_path = "/{}".format(current.replace(":", "/"))
         dlist = []
         flist = []
+
+
         if not dir_exists(location_path):
             msg = "Location {} does not exist or inaccesible".format(location_path)
             parent = ""
@@ -47,19 +47,22 @@ async def a_f_browse(request, location):
                 if loc[1] == 0x8000:        #file
                     size = loc[3]
                     path = "{0}:{1}".format(current, loc[0]) if current else "{}".format(loc[0])
-                    type = "File"
-                    flist.append([name, path, type, size])
+                    flist.append([name, path, size])
                 elif loc[1] == 0x4000:        #folder
                     size = ""
                     path = "{0}:{1}".format(current, loc[0]) if current else "{}".format(loc[0])
-                    type = "Dir"
-                    dlist.append([name, path, type, size])
+                    dlist.append([name, path, size])
                 else:
                     pass
 
                 parent = ":".join(current.split(":")[:-1]) if len(current.split(":"))> 1 else " "
-        await render_template(c.adm_head, leftmenu=filesys, enabled_modules=c.modules)
-        await render_template("{}file.html".format(c.adm), breadcrumb=breadcrumb(current), parent=parent, dlist=dlist, flist=flist, msg=msg)
+        await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
+        await render_template("{}file-chunk-begin.html".format(c.adm), breadcrumb=breadcrumb(current), parent=parent, msg=msg)
+        for d in dlist:
+            await render_template("{}file-chunk-browse.html".format(c.adm), d=d)
+        for fl in flist:
+            await render_template("{}file-chunk-view.html".format(c.adm), f=fl)
+        await render_template("{}file-chunk-end.html".format(c.adm))
         return await render_template(c.adm_foot)
     return await f(request, location)
 
@@ -70,7 +73,7 @@ async def a_f_view(request, location):
     async def f(request, location):
         current = location.replace("..", "").strip(":")
         with open("/{}".format(current.replace(":", "/")), "r") as f:
-            await render_template(c.adm_head, leftmenu=filesys, enabled_modules=c.modules)
+            await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
             await render_template_noreplace("{}file-view-begin.html".format(c.adm), 
                 file_title="/{}".format(current.replace(":", "/")),
             )

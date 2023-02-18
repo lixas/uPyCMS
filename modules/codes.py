@@ -1,11 +1,10 @@
-import gc, uasyncio, os, time  # type: ignore comment;
-gc.enable()
+import os, time  # type: ignore comment;
 import libs.PyDB as mdb  # type: ignore comment;
 from libs.phew import server
 from libs import session as ses
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required, file_exists
+from .common import admin_required, file_exists, active_modules
 
 code_links=[
         "Management of Code Pages", [
@@ -35,11 +34,10 @@ async def a_code(request):
         if len(code_list)== 0:
             return await render_template_noreplace("{}generic.html".format(c.adm), 
                 content="No code pages available. <a href=\"/admin/new/code\">Create new</a>",
-                leftmenu=code_links, enabled_modules=c.modules)
-        await render_template(c.adm_head, leftmenu=code_links, enabled_modules=c.modules)
+                leftmenu=code_links, enabled_modules=active_modules)
+        await render_template(c.adm_head, leftmenu=code_links, enabled_modules=active_modules)
         await render_template("{}code.html".format(c.adm), code_list=code_list)
         return await render_template(c.adm_foot)
-    # gc.collect()
     return await f(request)
 
 
@@ -52,7 +50,7 @@ async def a_c_save(request):
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
                 content="Code ID error- should be integer",
-                leftmenu=code_links, enabled_modules=c.modules
+                leftmenu=code_links, enabled_modules=active_modules
             )
         # create new record
         codes_table = mdb.Database.open("database").open_table("codepages")
@@ -101,7 +99,6 @@ async def a_c_save(request):
                 codes_table.update_row(code_id, data["d"])
 
         return await a_code(request)
-    # gc.collect()
     return await f(request)
 
 
@@ -109,13 +106,12 @@ async def a_c_save(request):
 async def a_c_edit(request, code_id):
     @admin_required
     async def f(request, code_id):
-        # check if blog is is numeric
         try:
             code_id = int(code_id)
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
                 content="Code ID error",
-                leftmenu=code_links, enabled_modules=c.modules
+                leftmenu=code_links, enabled_modules=active_modules
             )
 
         data = mdb.Database.open("database").open_table("codepages").find_row(code_id)
@@ -132,23 +128,21 @@ async def a_c_edit(request, code_id):
                 code.append(f.read())
         else:
             code.append("WARNING: data file at path {} not found".format(data_file_path))
-        await render_template(c.adm_head, leftmenu=code_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=code_links, enabled_modules=active_modules)
         await render_template("{}code-edit.html".format(c.adm), code_data=code)
         return await render_template(c.adm_foot)
-    # gc.collect()
     return await f(request, code_id)
 
 @server.route("/admin/code/delete/<code_id>")
 async def a_c_delete(request, code_id):
     @admin_required
     async def f(request, code_id):
-        # check if code id is numeric
         try:
             code_id = int(code_id)
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
                 content="Code ID error",
-                leftmenu=code_links, enabled_modules=c.modules
+                leftmenu=code_links, enabled_modules=active_modules
             )
 
         codes_table = mdb.Database.open("database").open_table("codepages")
@@ -159,5 +153,4 @@ async def a_c_delete(request, code_id):
             os.remove(data_file_path)
         codes_table.delete_row(code_id)
         return await a_code(request)
-    # gc.collect()
     return await f(request, code_id)   

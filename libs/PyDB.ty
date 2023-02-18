@@ -50,14 +50,14 @@ def file_exists(path):
         f = open(path, 'r') 
         f.close()
         return True
-    except OSError:
+    except OSError:       # type: ignore comment;
         return False
 
 
 def dir_exists(path):
     try:
         return os.stat(path)[0] & 0o170000 == 0o040000
-    except OSError:
+    except OSError:       # type: ignore comment;
         return False
 
 
@@ -337,9 +337,13 @@ class Table:
         """
         Update data based on row_id.
         """
+        # get data from database and update with user provided
+        combined = self.find_row(row_id)["d"]
+        combined.update(update_data)
+
         # Check to make sure all the column names given by user
         # match the column names in the table.
-        data = self.__scrub_data(update_data, False)
+        data = self.__scrub_data(combined, False)
         path = self.__data_file_for_row_id(row_id)
         if data:
             # Create a temp data file with the updated row data.
@@ -394,7 +398,7 @@ class Table:
         # Calculate what line in the file the row_id will be found at
         looking_for_line = self.__row_id_in_file(row_id)
         # Prevous method of counting lines is not reliable
-        if looking_for_line:
+        if looking_for_line is not None:
             with open(self.__data_file_for_row_id(row_id), 'r') as f:
                 for current_line, line in enumerate(f):
                     if current_line == looking_for_line:
@@ -409,12 +413,13 @@ class Table:
         """
         final_result = []
         results = self.__return_query('query', queries, show_row)
+        # print("results", results)
         if results is None:
-            return None
+            return []
         else:
             if len(results) > 1:
                 for result in results:
-                    final_result.append(result['d'])
+                    final_result.append(result)
             else:
                 final_result = results
         return final_result
@@ -693,7 +698,7 @@ class Table:
                 try:
                     if os.path.exists(page):
                         os.remove(page)
-                except AttributeError:
+                except AttributeError:        # type: ignore comment;
                     pass
                 os.rename(temp_path, page)
         return True
@@ -776,7 +781,7 @@ class Table:
                     if line != "\n":
                         if int(json.loads(line)['r']) == int(row_id):
                             return line_num
-        return False
+        return None
 
     def __scrub_data(self, data: any, fill_missing: bool = True):
         """
@@ -818,7 +823,7 @@ class Table:
 
                 all_columns.remove(column)
                 result[column] = value
-        except KeyError:
+        except KeyError:          # type: ignore comment;
             raise Exception("Column {} does not exist in {}".format(
                 column, self.name))
 

@@ -1,22 +1,17 @@
-import gc, os  # type: ignore comment;
-gc.enable()
+import os  # type: ignore comment;
 from io import StringIO
 from libs.phew import server
 from libs.phew.template import render_template  # type: ignore comment;
-import libs.phew.logging as logging  # type: ignore comment;
 import conf as c
-from modules.common import admin_required, isAdmin
-
-gc.collect()
+from modules.common import admin_required, isAdmin, active_modules
 
 @server.route("/admin/console")
 async def a_console(request):
     @admin_required
     async def f(request):
-        await render_template(c.adm_head, leftmenu=[], enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=[], enabled_modules=active_modules)
         await render_template("{}console.html".format(c.adm))
         return await render_template(c.adm_foot)
-    # gc.collect()
     return await f(request)
 
 
@@ -48,5 +43,4 @@ async def a_c_ajax(request):
             os.dupterm(None)
         
         return await output.getvalue()
-    # gc.collect()
     return await f(request)

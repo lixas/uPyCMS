@@ -1,10 +1,9 @@
-import gc, uasyncio, json  # type: ignore comment;
-gc.enable()
+import json  # type: ignore comment;
 import libs.PyDB as mdb  # type: ignore comment;
 from libs.phew import server
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required
+from .common import admin_required, active_modules
 
 database_links=[
         "Manage data tables", [
@@ -29,7 +28,7 @@ async def a_database(request):
                 stats["Pages_Count"],       # 3
                 stats["Current_row"]        # 4
             ])
-        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
         await render_template("{}database.html".format(c.adm), tlist = data )
         return await render_template(c.adm_foot)
     return await f(request)
@@ -42,7 +41,7 @@ async def a_database_tbl(request):
         action = request.query.get("act", None)
         tables = mdb.Database.open("database").list_tables()
 
-        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
         await render_template("{}db-tbl-choose.html".format(c.adm), tbl = tables, action=action)
         return await render_template(c.adm_foot)
     return await f(request)
@@ -56,7 +55,7 @@ async def a_db_schema(request, table):
             return await render_template_noreplace("{}generic.html".format(c.adm),
                 leftmenu=database_links,
                 content="Table '{}' was not found".format(table),
-                enabled_modules=c.modules
+                enabled_modules=active_modules
             )
         data=[]
         cur_tbl = mdb.Database.open("database").open_table(str(table))
@@ -72,7 +71,7 @@ async def a_db_schema(request, table):
         tdef["max"]= cur_tbl.max_rows
         del(cur_tbl)        # clear some RAM ~6kb
 
-        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
         await render_template("{}db-schema.html".format(c.adm),
             table = str(table),
             tdef = tdef,
@@ -99,7 +98,7 @@ async def a_db_query(request, table, **kwargs):
             return await render_template_noreplace("{}generic.html".format(c.adm),
                 leftmenu=database_links,
                 content="Table '{}' was not found".format(table),
-                enabled_modules=c.modules
+                enabled_modules=active_modules
             )
         cur_tbl = mdb.Database.open("database").open_table(str(table))
 
@@ -137,7 +136,7 @@ async def a_db_query(request, table, **kwargs):
 
         del(cur_tbl)        # clear some RAM ~6kb
 
-        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
         await render_template_noreplace("{}db-query.html".format(c.adm),
             table_jump = jump_to_table,
             table = str(table),
@@ -162,7 +161,7 @@ async def a_db_row_save(request):
             return await render_template_noreplace("{}generic.html".format(c.adm),
                 leftmenu=database_links,
                 content="Table '{}' was not found".format(tbl_name),
-                enabled_modules=c.modules
+                enabled_modules=active_modules
             )
         
         table_obj = mdb.Database.open("database").open_table(tbl_name)
@@ -200,7 +199,7 @@ async def a_db_del_row(request, table):
             return await render_template_noreplace("{}generic.html".format(c.adm),
                 leftmenu=database_links,
                 content="Table '{}' was not found".format(table),
-                enabled_modules=c.modules
+                enabled_modules=active_modules
             )
 
         cur_tbl = mdb.Database.open("database").open_table(str(table))
@@ -247,7 +246,7 @@ async def a_db_drop(request, table):
             return await render_template_noreplace("{}generic.html".format(c.adm),
                 leftmenu=database_links,
                 content="Table '{}' was not found".format(table),
-                enabled_modules=c.modules
+                enabled_modules=active_modules
             )
         cur_tbl = mdb.Database.open("database").open_table(str(table))
         cur_tbl.drop()

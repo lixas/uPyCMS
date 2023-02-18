@@ -3,7 +3,7 @@ import libs.PyDB as mdb  # type: ignore comment;
 from libs.phew import server
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from modules.common import admin_required, file_exists, dir_exists
+from modules.common import admin_required, file_exists, dir_exists, active_modules
 
 blog_links= [
         "Manage your blogs", [
@@ -31,16 +31,15 @@ async def a_blog(request):
             ])
 
         if len(result)>0:
-            await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=c.modules)
+            await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=active_modules)
             await render_template("{}blog.html".format(c.adm), blist=result,)
             return await render_template(c.adm_foot)
             
         else:
             return await render_template_noreplace("{}generic.html".format(c.adm), 
                 content="No blogs available. <a href=\"/admin/new/blog\">Create new</a>",
-                leftmenu=blog_links, enabled_modules=c.modules
+                leftmenu=blog_links, enabled_modules=active_modules
             )
-    # gc.collect()
     return await f(request)
 
 
@@ -53,7 +52,7 @@ async def a_b_save(request):
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
                 content="Blog ID error. ID should be integer",
-                leftmenu=blog_links, enabled_modules=c.modules
+                leftmenu=blog_links, enabled_modules=active_modules
             )
 
         # create new record
@@ -87,7 +86,6 @@ async def a_b_save(request):
                 f.write(request.form.get("blog", None))
                 blogs_table.update_row(blog_id, data["d"])
         return await a_blog(request)
-    # gc.collect()
     return await f(request)
 
 
@@ -95,12 +93,11 @@ async def a_b_save(request):
 async def a_b_edit(request, blog_id):
     @admin_required
     async def f(request, blog_id):
-        # check if blog is is numeric
         try:
             blog_id = int(blog_id)
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
-                content="Blog ID error", leftmenu=blog_links, enabled_modules=c.modules)
+                content="Blog ID error", leftmenu=blog_links, enabled_modules=active_modules)
         data = mdb.Database.open("database").open_table("blogs").find_row(blog_id)
 
         blog = []
@@ -112,12 +109,11 @@ async def a_b_edit(request, blog_id):
                 blog.append(f.read())       # 2
         else:
             blog.append("WARNING: data file at path {} not found".format(data_file_path))
-        await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=c.modules)
+        await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=active_modules)
         await render_template("{}blog-edit.html".format(c.adm), 
                 blog_data=blog,
         )
         return await render_template(c.adm_foot)
-    # gc.collect()
     return await f(request, blog_id)
 
 
@@ -125,12 +121,11 @@ async def a_b_edit(request, blog_id):
 async def a_b_delete(request, blog_id):
     @admin_required
     async def f(request, blog_id):
-        # check if blog is is numeric
         try:
             blog_id = int(blog_id)
         except ValueError:  # type: ignore comment;
             return await render_template("{}generic.html".format(c.adm), 
-                content="Blog ID error", leftmenu=blog_links, enabled_modules=c.modules )
+                content="Blog ID error", leftmenu=blog_links, enabled_modules=active_modules )
 
         blogs_table = mdb.Database.open("database").open_table("blogs")
         data = blogs_table.find_row(blog_id)
@@ -139,5 +134,4 @@ async def a_b_delete(request, blog_id):
             os.remove(data_file_path)
         blogs_table.delete_row(blog_id)
         return await a_blog(request)
-    # gc.collect()
     return await f(request, blog_id)        

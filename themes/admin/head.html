@@ -7,6 +7,7 @@
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css"> -->
     <link rel="stylesheet" href="/static/bulma.min.css">
     <link rel="stylesheet" href="/static/bulma-divider.min.css">
+    <link rel="stylesheet" href="/static/bulma-switch.min.css">
     <script src="/static/bulma.js"></script>
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.7.6/showdown.min.js"></script> -->
@@ -61,9 +62,9 @@
                 <a class="navbar-link"><i class="icon mr-2 fa-solid fa-microchip"></i>Server</a>
                 <div class="navbar-dropdown">
                   <a class="navbar-item"><i class="icon mr-3 fa-solid fa-wifi"></i>WiFi</a>
-                  <a href="/admin/servertime" class="navbar-item"><i class="icon mr-3 fa-regular fa-clock"></i>Server time</a>
+                  {{"""<a href="/admin/servertime" class="navbar-item"><i class="icon mr-3 fa-regular fa-clock"></i>Server time</a>""" if "servertime" in enabled_modules else ""}}
                   {{"""<a href="/admin/console" class="navbar-item"><i class="icon mr-3 fa-solid fa-terminal"></i>Console</a>""" if "console" in enabled_modules else ""}}
-                  <a href="/admin/modules" class="navbar-item"><i class="icon mr-3 fa-solid fa-boxes-stacked"></i>TODO: Modules</a>
+                  <a href="/admin/mods" class="navbar-item"><i class="icon mr-3 fa-solid fa-boxes-stacked"></i>Modules</a>
                 </div>
               </div>
             </div>

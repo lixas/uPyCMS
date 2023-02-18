@@ -1,4 +1,4 @@
-import uasyncio, os, time, gc, sys, io  # type: ignore comment;
+import uasyncio, os, time, sys, io  # type: ignore comment;
 from . import logging
 
 _total_bytes_sent = 0

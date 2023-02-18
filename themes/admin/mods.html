@@ -1,0 +1,66 @@
+<!-- begin modules list -->
+<div class="content m-1">
+  It is important to note that each module in uPyCMS uses RAM, and if many modules are enabled, it may encounter out-of-memory issues on devices without additonal PSRAM. To avoid these issues, it is recommended to only enable the modules that you need for your specific project. By carefully managing the modules that are enabled and using memory management techniques, you can avoid running into out-of-memory issues and ensure the smooth operation of your uPyCMS-based project.<br/>
+  <code>Restart server after module unload</code>
+</div>
+<div class="table-container">
+<table class="table is-hoverable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{"\n".join(["""<tr><th><div class="field"><input id="switch-{1}" type="checkbox" data-modname="{1}" class="switch is-rounded is-danger" {0} onchange="onSwitchChange(this);"><label for="switch-{1}">{1}</label></div></th><td>{2}</td></tr>""".format("checked" if i[0] else "", i[1], i[2]) for i in mlist])}}
+    <tr><th><div class="field"><input id="switch-mods" type="checkbox" name="switch-mods" class="switch is-rounded" checked onchange="this.checked=true" ><label for="switch-mods">modules</label></div></th><td>Its a modules management class. You can not disable it</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="divider"></div>
+<div class="field is-horizontal">
+  <div class="field-label">
+<!-- Left empty for spacing -->
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <div class="field buttons is-pulled-left ">
+          <form action="/admin/mods/restart" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="dummy" value="dummy">
+          <button type="submit" class="control button is-danger">Restart server in 5 sec</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end modules list -->
+<script>
+function onSwitchChange(el){
+  var previous_state = !el.checked
+  const mod = el.dataset.modname;
+  const act = el.checked ? "1" : "0";
+  el.disabled=true;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/admin/mods/'+mod+'/'+act, true);
+  xhr.onreadystatechange = () => {
+    // In local files, status is 0 upon success in Mozilla Firefox
+    if (xhr.readyState === XMLHttpRequest.DONE) {
+      const status = xhr.status;
+      if (status === 0 || (status >= 200 && status < 400)) {
+        // The request has been completed successfully
+        if (xhr.responseText != "200"){
+          el.checked = previous_state;
+        }
+        el.disabled=false;
+      } else {
+        // Oh no! There has been an error with the request!
+        el.disabled=false;
+        el.checked = previous_state;
+      }
+    }
+  };
+  xhr.send();
+}
+</script>

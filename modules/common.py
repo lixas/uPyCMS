@@ -1,7 +1,13 @@
 import os
 from libs import session as ses
 from libs.phew.template import render_template  # type: ignore comment;
-import conf as c
+import libs.PyDB as mdb  # type: ignore comment;
+
+active_modules = []
+
+def error_page(code):
+    with open("/themes/basic/{}.html".format(str(code).replace("..", "")))as f:
+        return f.read()
 
 def isAdmin(req):
     sesKey = ses.extractFromCookie(req)
@@ -15,11 +21,9 @@ def isAdmin(req):
 def admin_required(f):
     def d(request, *args, **kwargs):
         if not isAdmin(request):
-            return render_template(c.adm_login, follow=request.path)
-        # gc.collect()
+            return render_template("/themes/admin/login.html", follow=request.path)
         return f(request, *args, **kwargs)
     return d
-
 
 def file_exists(path):
     try:
@@ -55,3 +59,7 @@ def get_file_size(path):
                 return loc[3]
     else:
         return False
+
+tbl = mdb.Database.open("database").open_table("modules")
+for mod in tbl.query({"active": True}):
+    active_modules.append(mod['name'])
