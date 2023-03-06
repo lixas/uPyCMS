@@ -2,7 +2,7 @@ import os  # type: ignore comment;
 from libs.phew import server
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required, dir_exists, file_exists, breadcrumb, active_modules
+from modules.common import admin_required, dir_exists, file_exists, breadcrumb, active_modules
 
 filesys= [
         "Browse folders", [
@@ -19,10 +19,10 @@ async def a_files(request):
     @admin_required
     async def f(request):
         await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
-        await render_template("{}file-chunk-begin.html".format(c.adm), breadcrumb=[], parent=None, msg=None)
+        await render_template("{}/file-chunk-begin.html".format(__path__), breadcrumb=[], parent=None, msg=None)
         for loc in filesys[1]:
-            await render_template("{}file-chunk-browse.html".format(c.adm), d=[loc[0], loc[1].split("/")[-1], ""])
-        await render_template("{}file-chunk-end.html".format(c.adm))
+            await render_template("{}/file-chunk-browse.html".format(__path__), d=[loc[0], loc[1].split("/")[-1], ""])
+        await render_template("{}/file-chunk-end.html".format(__path__))
         return await render_template(c.adm_foot)
     return await f(request)
 
@@ -57,12 +57,12 @@ async def a_f_browse(request, location):
 
                 parent = ":".join(current.split(":")[:-1]) if len(current.split(":"))> 1 else " "
         await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
-        await render_template("{}file-chunk-begin.html".format(c.adm), breadcrumb=breadcrumb(current), parent=parent, msg=msg)
+        await render_template("{}/file-chunk-begin.html".format(__path__), breadcrumb=breadcrumb(current), parent=parent, msg=msg)
         for d in dlist:
-            await render_template("{}file-chunk-browse.html".format(c.adm), d=d)
+            await render_template("{}/file-chunk-browse.html".format(__path__), d=d)
         for fl in flist:
-            await render_template("{}file-chunk-view.html".format(c.adm), f=fl)
-        await render_template("{}file-chunk-end.html".format(c.adm))
+            await render_template("{}/file-chunk-view.html".format(__path__), f=fl)
+        await render_template("{}/file-chunk-end.html".format(__path__))
         return await render_template(c.adm_foot)
     return await f(request, location)
 
@@ -74,7 +74,7 @@ async def a_f_view(request, location):
         current = location.replace("..", "").strip(":")
         with open("/{}".format(current.replace(":", "/")), "r") as f:
             await render_template(c.adm_head, leftmenu=filesys, enabled_modules=active_modules)
-            await render_template_noreplace("{}file-view-begin.html".format(c.adm), 
+            await render_template_noreplace("{}/file-view-begin.html".format(__path__), 
                 file_title="/{}".format(current.replace(":", "/")),
             )
             while True:
@@ -83,7 +83,7 @@ async def a_f_view(request, location):
                     break
                 await render_template("{}string.html".format(c.adm), s=data.replace(">", "&gt;").replace("<", "&lt;"))
             
-            await render_template_noreplace("{}file-view-end.html".format(c.adm), 
+            await render_template_noreplace("{}/file-view-end.html".format(__path__), 
                 back_location = ":".join(current.split(":")[:-1]),
             )
             return await render_template(c.adm_foot)

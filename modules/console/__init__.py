@@ -10,7 +10,7 @@ async def a_console(request):
     @admin_required
     async def f(request):
         await render_template(c.adm_head, leftmenu=[], enabled_modules=active_modules)
-        await render_template("{}console.html".format(c.adm))
+        await render_template("{}/console.html".format(__path__))
         return await render_template(c.adm_foot)
     return await f(request)
 

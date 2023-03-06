@@ -1,0 +1,17 @@
+<!-- database new row begin -->
+<script>
+    function validateInteger(){
+        if (!/^-?\d*$/.test(this.value)) {
+            this.value = this.value.slice(0, -1); 
+        }
+    }
+
+    function validateFloat(){
+        if (!/^-?\d*\.?\d*$/.test(this.value)) {
+            this.value = this.value.slice(0, -1);
+        }
+    }
+</script>
+<div class="subtitle">Insert data into "{{str(table)}}"</div>
+<form action="/admin/database/row/save" method="post" enctype="multipart/form-data">
+<input type="hidden" name="tablename" value="{{str(table)}}" >

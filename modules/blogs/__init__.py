@@ -7,8 +7,9 @@ from modules.common import admin_required, file_exists, dir_exists, active_modul
 
 blog_links= [
         "Manage your blogs", [
-        ["List blogs",  "/admin/blog",      "fa-solid fa-list-ol"],
-        ["Write blog",  "/admin/new/blog",  "fa-solid fa-file-circle-plus"],
+        ["List blogs",  "/admin/blog",              "fa-solid fa-list-ol"],
+        ["Write blog",  "/admin/new/blog",          "fa-solid fa-file-circle-plus"],
+        ["Settings",    "/admin/blog/settings",     "fa-solid fa-gear"],
     ]]
 
 @server.route("/admin/blog")
@@ -32,7 +33,7 @@ async def a_blog(request):
 
         if len(result)>0:
             await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=active_modules)
-            await render_template("{}blog.html".format(c.adm), blist=result,)
+            await render_template("{}/blog.html".format(__path__), blist=result,)
             return await render_template(c.adm_foot)
             
         else:
@@ -110,7 +111,7 @@ async def a_b_edit(request, blog_id):
         else:
             blog.append("WARNING: data file at path {} not found".format(data_file_path))
         await render_template(c.adm_head, leftmenu=blog_links, enabled_modules=active_modules)
-        await render_template("{}blog-edit.html".format(c.adm), 
+        await render_template("{}/blog-edit.html".format(__path__), 
                 blog_data=blog,
         )
         return await render_template(c.adm_foot)
@@ -135,3 +136,16 @@ async def a_b_delete(request, blog_id):
         blogs_table.delete_row(blog_id)
         return await a_blog(request)
     return await f(request, blog_id)        
+
+
+@server.route("/admin/blog/settings", methods=["GET", "POST"])
+async def a_b_settings(request):
+    @admin_required
+    async def f(request):
+        if request.form.get("action", 0) == "update":
+            # update database with new values
+            pass
+        # read database
+        # show on page
+        return await "ok"
+    return await f(request)

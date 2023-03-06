@@ -1,3 +1,4 @@
+import sys
 from . import logging
 
 async def render_template(template, **kwargs):
@@ -56,7 +57,10 @@ async def render_template(template, **kwargs):
           # yield the result of the expression
           if result is not None:
             yield str(result)
-      except:
+      except Exception as e:      # type: ignore comment;
+        print(template)
+        print(expression)
+        sys.print_exception(e)
         pass
 
       # discard the parsed bit

@@ -4,7 +4,7 @@ from libs.phew import server
 from libs import session as ses
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required, file_exists, active_modules
+from modules.common import admin_required, file_exists, active_modules
 
 code_links=[
         "Management of Code Pages", [
@@ -36,7 +36,7 @@ async def a_code(request):
                 content="No code pages available. <a href=\"/admin/new/code\">Create new</a>",
                 leftmenu=code_links, enabled_modules=active_modules)
         await render_template(c.adm_head, leftmenu=code_links, enabled_modules=active_modules)
-        await render_template("{}code.html".format(c.adm), code_list=code_list)
+        await render_template("{}/code.html".format(__path__), code_list=code_list)
         return await render_template(c.adm_foot)
     return await f(request)
 
@@ -129,7 +129,7 @@ async def a_c_edit(request, code_id):
         else:
             code.append("WARNING: data file at path {} not found".format(data_file_path))
         await render_template(c.adm_head, leftmenu=code_links, enabled_modules=active_modules)
-        await render_template("{}code-edit.html".format(c.adm), code_data=code)
+        await render_template("{}/code-edit.html".format(__path__), code_data=code)
         return await render_template(c.adm_foot)
     return await f(request, code_id)
 

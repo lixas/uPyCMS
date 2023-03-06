@@ -5,7 +5,7 @@ __version__ = "0.0.2"
 # allocate relatively large blocks of ram.
 # import os, gc
 import gc
-gc.threshold(50000)
+gc.threshold(5000)
 
 # # phew! the Pico (or Python) HTTP Endpoint Wrangler
 # from . import logging

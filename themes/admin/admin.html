@@ -75,10 +75,10 @@
       <span class="value">{{int(100/fs['total']*fs['used'])}}%</span>
       <span class="name">Internal</span>
   </div>
-  <div class="gauge" style="width: 200px; margin-left: 10px; --rotation:{{180/sd['total']*sd['used']}}deg; --color:#--color: {{ fs['color'] }}; --background:#e9ecef;">
+  <div class="gauge" style="width: 200px; margin-left: 10px; --rotation:{{180/sd['total']*sd['used'] if sd['used']>0 else 0 }}deg; --color:#--color: {{ fs['color'] }}; --background:#e9ecef;">
     <div class="percentage"></div>
     <div class="mask"></div>
-    <span class="value">{{int(100/sd['total']*sd['used'])}}%</span>
+    <span class="value">{{ int(100/sd['total']*sd['used']) if sd['used']>0 else 0 }}%</span>
     <span class="name">SDCard</span>
   </div>
 </div>

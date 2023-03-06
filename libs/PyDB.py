@@ -1,10 +1,3 @@
-'''
-- Added column types support (str, bool, int)
-- Changed some code to be more reliable. Example: with previous version the was issue: Create reccord and delete last record multiple times, and after finishing filling data file with 10 records, your last record will be on 10+ depending how many times you have deleted last record
-- More reliability fixes (dir_exists() function, find_row )
-- Added option to return '_row' as data column if needed at query(), find(), scan() as second optional boolen argument
-- Added table Drop()
-'''
 """Low-memory json-based databse for MicroPython.
 Data is stored in a folder structure in json for easy inspection.
 Indexing multiple columns is supported, and RAM usage is optimized
@@ -23,6 +16,11 @@ Insert examples:
 db_table.insert({"name": "nate", "password": "coolpassword"})
 or you can use dict for fields:
 db_table.insert(["John", 37, True])
+Query data
+db_table.query({"name": "nate"})
+In case you need to get row_id with your data, pass second optional boolean parameter
+db_table.insert({"name": "nate", "password": "coolpassword"}, True)
+You'll get additional column '_row' with your data. Works with scan() find() and query()
 Low-level operations using internal row_id:
 db_table.find_row(5)
 db_table.update_row(300, {'name': 'bob'})
@@ -50,14 +48,14 @@ def file_exists(path):
         f = open(path, 'r') 
         f.close()
         return True
-    except OSError:       # type: ignore comment;
+    except OSError:
         return False
 
 
 def dir_exists(path):
     try:
         return os.stat(path)[0] & 0o170000 == 0o040000
-    except OSError:       # type: ignore comment;
+    except OSError:
         return False
 
 
@@ -91,7 +89,6 @@ class Database:
                     'rows_per_page': rows_per_page
                 }
                 f.write(json.dumps(data))
-                # print("Database {} created successfully".format(database))
                 return Database(database, rows_per_page, max_rows, version)
         else:
             raise Exception("Database {} is already in use".format(database))
@@ -308,7 +305,6 @@ class Table:
                 # Check that we aren't at max rows:
                 if self.current_row < self.max_rows:
                     if self.__insert_modify_data_file(path, data):
-                        # print("Row {} has been added".format(row_id))
                         return True
                     else:
                         raise Exception("There was a problem inserting "
@@ -327,10 +323,9 @@ class Table:
             raise Exception("Query did not match any data")
         else:
             # Loop through and update each row where the query returned true
-            for found_row in matched_queries:
+            for row_id in matched_queries:
                 # Check to make sure all the column names given by user match
                 # the column names in the table.
-                row_id = found_row['r']
                 self.update_row(row_id, data)
 
     def update_row(self, row_id: int, update_data: any):
@@ -348,7 +343,6 @@ class Table:
         if data:
             # Create a temp data file with the updated row data.
             if self.__modify_data_file(path, {row_id: data}, 'update'):
-                # print("Row {} has been updated".format(row_id))
                 pass
             else:
                 raise Exception("There was a problem updating "
@@ -376,7 +370,6 @@ class Table:
         """
         if self.__modify_data_file(self.__data_file_for_row_id(row_id),
                                    {row_id: None}, 'delete'):
-            # print("Row {} has been deleted".format(row_id))
             pass
         else:
             raise Exception("There was a problem deleting "
@@ -413,7 +406,6 @@ class Table:
         """
         final_result = []
         results = self.__return_query('query', queries, show_row)
-        # print("results", results)
         if results is None:
             return []
         else:
@@ -698,7 +690,7 @@ class Table:
                 try:
                     if os.path.exists(page):
                         os.remove(page)
-                except AttributeError:        # type: ignore comment;
+                except AttributeError:
                     pass
                 os.rename(temp_path, page)
         return True
@@ -823,7 +815,7 @@ class Table:
 
                 all_columns.remove(column)
                 result[column] = value
-        except KeyError:          # type: ignore comment;
+        except KeyError:
             raise Exception("Column {} does not exist in {}".format(
                 column, self.name))
 

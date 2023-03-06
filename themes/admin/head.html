@@ -51,10 +51,10 @@
                 <a class="navbar-link"><i class="icon mr-2 fa-solid fa-magnifying-glass"></i>Browse</a>
                 <div class="navbar-dropdown">
                   {{"""<a href="/admin/database" class="navbar-item"><i class="icon mr-3 fa-solid fa-database"></i>Database</a>""" if "database" in enabled_modules else ""}}
-                  {{"""<a href="/admin/files" class="navbar-item"><i class="icon mr-3 fa-regular fa-folder-open"></i>File system</a>""" if "file_manager" in enabled_modules else ""}}
+                  {{"""<a href="/admin/files" class="navbar-item"><i class="icon mr-3 fa-regular fa-folder-open"></i>File system</a>""" if "files" in enabled_modules else ""}}
                   <a href="#backups" class="navbar-item"><i class="icon mr-3 fa-solid fa-box-archive"></i>TODO: Backups</a>
                   <hr class="navbar-divider">
-                  <a href="/admin/sessions" class="navbar-item"><i class="icon mr-3 fa-solid fa-users-viewfinder"></i>Sessions</a>
+                  {{"""<a href="/admin/sessions" class="navbar-item"><i class="icon mr-3 fa-solid fa-users-viewfinder"></i>Sessions</a>""" if "sessions" in enabled_modules else ""}}
                 </div>
               </div>
 
@@ -81,7 +81,7 @@
         </nav>
         <div class="columns">
           {{ "<div class=\"column is-one-quarter box navbar-menu\">" if leftmenu else "" }}
-            {{ "<div class=\"title\">{0}</div>".format(leftmenu[0]) if leftmenu[0] else "" }}
-            {{"\n".join(["""<a href=\"{0}\" class=\"navbar-item\">{2}{1}</a>""".format(itm[1], itm[0], "<i class=\"icon mr-1 {0}\"></i>".format(itm[2]) if len(itm)==3 else "" ) for itm in leftmenu[1]])}}
+            {{ "<div class=\"title\">{0}</div>".format(leftmenu[0]) if leftmenu else "" }}
+            {{ "\n".join(["""<a href="{0}" class="navbar-item">{2}{1}</a>""".format(itm[1], itm[0], """<i class="icon mr-1 {0}"></i>""".format(itm[2]) if len(itm)==3 else "" ) for itm in leftmenu[1]]) if leftmenu else "" }}
           {{ "</div>" if leftmenu else "" }}
           <div class="column mr-2">

@@ -9,7 +9,7 @@ from modules.common import admin_required, active_modules
 modules_links= [
         "Modules management", [
         ["List modules",                "/admin/mods",          "fa-solid fa-list-ol"],
-        ["Import and load modules",     "/admin/mods/import",   "fa-solid fa-file-import"],
+        # ["Import and load modules",     "/admin/mods/import",   "fa-solid fa-file-import"],
     ]]
 
 
@@ -26,7 +26,7 @@ async def mods_list(request):
                 itm["description"]
             ])
         await render_template(c.adm_head, leftmenu=modules_links, enabled_modules=active_modules)
-        await render_template("{}mods.html".format(c.adm), mlist=result,)
+        await render_template("{}/mods.html".format(__path__), mlist=result,)
         return await render_template(c.adm_foot)
     return await f(request)
 

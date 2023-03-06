@@ -1,0 +1,59 @@
+{{"""<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">{0}</label>
+  </div>
+  <div class="field-body" style="padding-top: 0.375em;">
+    <div class="field">
+      <div class="control">
+        <label class="checkbox mr-3">
+          <input type="checkbox" name="f-{0}" value="1">
+        </label>
+      </div>
+    </div>
+  </div>
+</div>""".format(name) if data_type=="bool" else ""}}
+{{"""<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">{0}</label>
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <input name="f-{0}" id="{0}-input" class="input" type="text" inputType="number" step=1 />
+      </div>
+      <p class="is-hidden help is-danger">Validavimo klaidos pranesimas Integeriui</p>
+    </div>
+  </div>
+  <script>
+    document.getElementById("{0}-input").addEventListener("input", validateInteger);
+  </script>
+</div>""".format(name) if data_type=="int" else ""}}
+{{"""<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">{0}</label>
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <input name="f-{0}" id="{0}-input" class="input" type="text" inputType="number" step=any />
+      </div>
+      <p class="is-hidden help is-danger">Validavimo klaidos pranesimas float'ui</p>
+    </div>
+  </div>
+  <script>
+    document.getElementById("{0}-input").addEventListener("input", validateFloat);
+  </script>
+</div>""".format(name) if data_type=="float" else ""}}
+{{"""<div class="field is-horizontal">
+  <div class="field-label is-normal">
+    <label class="label">{0}</label>
+  </div>
+  <div class="field-body">
+    <div class="field">
+      <div class="control">
+        <textarea class="input is-family-monospace" type="text" name="f-{0}" maxlength="{1}" ></textarea>
+      </div>
+      <p class="is-hidden help is-danger">Validavimo klaidos pranesimas stringui</p>
+    </div>
+  </div>
+</div>""".format(name, str(maxlength)) if data_type=="str" else ""}}

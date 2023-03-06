@@ -25,7 +25,7 @@ async def a_page(request):
                 pages_list.append([file_without_ext, entry[3]])
         if len(pages_list)>0:
             await render_template(c.adm_head, leftmenu=page_links, enabled_modules=active_modules)
-            await render_template("{}page.html".format(c.adm), plist=pages_list)
+            await render_template("{}/page.html".format(__path__), plist=pages_list)
             return await render_template(c.adm_foot)
         else:
             return await render_template_noreplace("{}generic.html".format(c.adm), 
@@ -47,7 +47,7 @@ async def a_p_edit(request, pagename):
             page.append("WARNING: data file at path {} not found".format(data_file_path))
 
         await render_template(c.adm_head, leftmenu=page_links, enabled_modules=active_modules)
-        await render_template("{}page-edit.html".format(c.adm), page_data= page)
+        await render_template("{}/page-edit.html".format(__path__), page_data= page)
         return await render_template(c.adm_foot)
     return await f(request, pagename)
 

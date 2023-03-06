@@ -3,7 +3,7 @@ import libs.PyDB as mdb  # type: ignore comment;
 from libs.phew import server
 from libs.phew.template import render_template, render_template_noreplace  # type: ignore comment;
 import conf as c
-from .common import admin_required, active_modules
+from modules.common import admin_required, active_modules
 
 database_links=[
         "Manage data tables", [
@@ -29,7 +29,7 @@ async def a_database(request):
                 stats["Current_row"]        # 4
             ])
         await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
-        await render_template("{}database.html".format(c.adm), tlist = data )
+        await render_template("{}/database.html".format(__path__), tlist = data )
         return await render_template(c.adm_foot)
     return await f(request)
 
@@ -42,7 +42,7 @@ async def a_database_tbl(request):
         tables = mdb.Database.open("database").list_tables()
 
         await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
-        await render_template("{}db-tbl-choose.html".format(c.adm), tbl = tables, action=action)
+        await render_template("{}/db-tbl-choose.html".format(__path__), tbl = tables, action=action)
         return await render_template(c.adm_foot)
     return await f(request)
 
@@ -72,7 +72,7 @@ async def a_db_schema(request, table):
         del(cur_tbl)        # clear some RAM ~6kb
 
         await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
-        await render_template("{}db-schema.html".format(c.adm),
+        await render_template("{}/db-schema.html".format(__path__),
             table = str(table),
             tdef = tdef,
             clist = data
@@ -137,13 +137,13 @@ async def a_db_query(request, table, **kwargs):
         del(cur_tbl)        # clear some RAM ~6kb
 
         await render_template(c.adm_head, leftmenu=database_links, enabled_modules=active_modules)
-        await render_template_noreplace("{}db-query.html".format(c.adm),
+        await render_template_noreplace("{}/db-query.html".format(__path__),
             table_jump = jump_to_table,
             table = str(table),
             error_msg=error,
             columns= columns,
             last_query = query_string)
-        await render_template_noreplace("{}db-query-result.html".format(c.adm),
+        await render_template_noreplace("{}/db-query-result.html".format(__path__),
             table = str(table),
             columns= columns,
             dlist = result)
