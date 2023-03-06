@@ -25,7 +25,7 @@ if not sta_if.isconnected():
         while not sta_if.isconnected():
             pass
         ip = sta_if.ifconfig()[0]
-        logging.debug("> Server IP: {}".format(ip))
+        logging.info("> Server IP: {}".format(ip))
     else:
         ap = network.WLAN(network.AP_IF)
         ap.active(True)
@@ -183,10 +183,10 @@ class Front():
 class Admin():
 
     # TODO do not forget to remove
-    @server.route("/admin/make")
-    def _make(request):
-        follow = request.query.get("follow", "/admin")
-        return render_template("{}redirect.html".format(c.adm), location=follow), 200, "text/html", {"set-cookie": "PhewSession={}; Path=/".format(ses.create(request.peer["ip"], {"isAdmin":1, "user":1}))}
+    # @server.route("/admin/make")
+    # def _make(request):
+        # follow = request.query.get("follow", "/admin")
+        # return render_template("{}redirect.html".format(c.adm), location=follow), 200, "text/html", {"set-cookie": "PhewSession={}; Path=/".format(ses.create(request.peer["ip"], {"isAdmin":1, "user":1}))}
 
     # render admin dashboard
     @server.route("/admin")
@@ -239,7 +239,7 @@ class Admin():
         password = request.form.get("password", None)
         result = mdb.Database.open("database").open_table("users").find({"login": username, "pass": password})
         if result:
-            return render_template("{}redirect.html".format(c.adm), location="/admin"), 200, "text/html", {"set-cookie": "PhewSession={0}; Path=/".format(ses.create(request.peer.ip, {"isAdmin":result["isadmin"], "user":1}))}
+            return render_template("{}redirect.html".format(c.adm), location="/admin"), 200, "text/html", {"set-cookie": "PhewSession={0}; Path=/".format(ses.create(request.peer["ip"], {"isAdmin":result["isadmin"], "user":1}))}
         else:
             return render_template(c.adm_login)
 
